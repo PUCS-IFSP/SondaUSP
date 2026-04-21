@@ -410,6 +410,9 @@
     <script>
         // --- LÓGICA DE SESSÃO DA API SEGURA ---
         let sessaoSenha = sessionStorage.getItem('cepema_auth_token') || '';
+        
+        // URL DO BANCO CENTRAL DEFINIDA GLOBALMENTE PARA TODO O SISTEMA
+        const URL_BANCO_CENTRAL = "https://script.google.com/macros/s/AKfycbwJ0PCV_t5SulONv1z6HLSKinHn0FunUtQ8BoRR6xqkKjG0MhwDSerDg0_vKdIjSOjFgw/exec";
 
         async function realizarLogin() {
             const senha = document.getElementById('input-senha').value;
@@ -611,9 +614,6 @@
     btn.disabled = true;
     
     try {
-        // COLOQUE O LINK DA IMPLANTAÇÃO DO SEU BANCO CENTRAL AQUI:
-        const urlBancoCentral = "https://script.google.com/macros/s/AKfycbwJ0PCV_t5SulONv1z6HLSKinHn0FunUtQ8BoRR6xqkKjG0MhwDSerDg0_vKdIjSOjFgw/exec";
-        
         const payload = {
             'Tolerancia_Offline': toleranceMinutes,
             'Dias_Visualizacao': diasVis,
@@ -622,7 +622,7 @@
             'Intervalo_Refresh': autoRefreshInterval
         };
 
-        const resposta = await fetch(`${urlBancoCentral}?senha=${encodeURIComponent(sessaoSenha)}&action=setParams`, {
+        const resposta = await fetch(`${URL_BANCO_CENTRAL}?senha=${encodeURIComponent(sessaoSenha)}&action=setParams`, {
             method: 'POST',
             body: JSON.stringify(payload)
         });
@@ -1019,7 +1019,7 @@
             document.getElementById('new-sensor-name').value = ''; document.getElementById('new-sensor-id').value = '';
         }
         
-        function saveSensor() {
+        async function saveSensor() {
             const n = document.getElementById('new-sensor-name').value.trim();
             const id = document.getElementById('new-sensor-id').value.trim();
             const original = document.getElementById('edit-original-name').value;
@@ -1028,11 +1028,32 @@
                 showModal({ title: 'Atenção', message: 'Por favor, preencha todos os campos para salvar.', type: 'alert' });
                 return;
             }
+            
+            const btn = document.getElementById('save-sensor-btn');
+            const txtOriginal = btn.innerText;
+            btn.innerText = "Salvando na Nuvem...";
+            btn.disabled = true;
+
             if(original && original !== n) delete biorreatores[original];
             
             biorreatores[n] = id;
             localStorage.setItem('biorreatores_db_v2', JSON.stringify(biorreatores));
             initSensorsDropdown(); renderManageList(); cancelEdit();
+            
+            // Sincronizando lista de Biorreatores com o Banco Central (Nuvem)
+            if (sessaoSenha) {
+                try {
+                    await fetch(`${URL_BANCO_CENTRAL}?senha=${encodeURIComponent(sessaoSenha)}&action=setSensors`, {
+                        method: 'POST',
+                        body: JSON.stringify(biorreatores)
+                    });
+                } catch (e) {
+                    console.error("Falha ao salvar biorreatores na nuvem:", e);
+                }
+            }
+
+            btn.innerText = txtOriginal;
+            btn.disabled = false;
             
             // Se for o primeiro sensor a ser adicionado, ativa a segurança imediatamente
             if(Object.keys(biorreatores).length === 1) {
@@ -1052,11 +1073,23 @@
                 message: `Tem certeza que deseja excluir o atalho para "${n}"? Os dados na planilha não serão afetados.`,
                 type: 'confirm',
                 confirmText: 'Excluir',
-                onConfirm: () => {
+                onConfirm: async () => {
                     delete biorreatores[n]; 
                     localStorage.setItem('biorreatores_db_v2', JSON.stringify(biorreatores)); 
                     renderManageList(); 
                     initSensorsDropdown(); 
+                    
+                    // Sincronizando exclusão com o Banco Central (Nuvem)
+                    if (sessaoSenha) {
+                        try {
+                            await fetch(`${URL_BANCO_CENTRAL}?senha=${encodeURIComponent(sessaoSenha)}&action=setSensors`, {
+                                method: 'POST',
+                                body: JSON.stringify(biorreatores)
+                            });
+                        } catch (e) {
+                            console.error("Falha ao excluir na nuvem:", e);
+                        }
+                    }
                 }
             });
         }
