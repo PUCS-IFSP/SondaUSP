@@ -590,23 +590,58 @@
             if (cont) cont.style.display = isEnabled ? 'block' : 'none';
         }
 
-        function saveGeneralConfig() {
-            toleranceMinutes = parseInt(document.getElementById('config-tolerance').value) || 120;
-            diasVis = parseInt(document.getElementById('config-dias-vis').value) || 7;
-            diasDown = parseInt(document.getElementById('config-dias-down').value) || 30;
-            autoRefreshEnabled = document.getElementById('config-refresh-enabled').value === 'true';
-            autoRefreshInterval = parseInt(document.getElementById('config-refresh-interval').value) || 5;
+        async function saveGeneralConfig() {
+    toleranceMinutes = parseInt(document.getElementById('config-tolerance').value) || 120;
+    diasVis = parseInt(document.getElementById('config-dias-vis').value) || 7;
+    diasDown = parseInt(document.getElementById('config-dias-down').value) || 30;
+    autoRefreshEnabled = document.getElementById('config-refresh-enabled').value === 'true';
+    autoRefreshInterval = parseInt(document.getElementById('config-refresh-interval').value) || 5;
 
-            localStorage.setItem('sys_tolerance_v1', toleranceMinutes);
-            localStorage.setItem('sys_dias_vis_v1', diasVis);
-            localStorage.setItem('sys_dias_down_v1', diasDown);
-            localStorage.setItem('sys_refresh_enabled_v1', autoRefreshEnabled);
-            localStorage.setItem('sys_refresh_interval_v1', autoRefreshInterval);
-            
-            loadDashboardData();
-            startAutoRefresh();
-            showModal({ title: 'Sucesso', message: 'Parâmetros globais atualizados e salvos.', type: 'alert' });
+    // 1. Salva localmente (como já fazia)
+    localStorage.setItem('sys_tolerance_v1', toleranceMinutes);
+    localStorage.setItem('sys_dias_vis_v1', diasVis);
+    localStorage.setItem('sys_dias_down_v1', diasDown);
+    localStorage.setItem('sys_refresh_enabled_v1', autoRefreshEnabled);
+    localStorage.setItem('sys_refresh_interval_v1', autoRefreshInterval);
+    
+    // 2. Salva no Banco Central (Google Sheets)
+    const btn = document.getElementById('btn-save-config');
+    const txtOriginal = btn.innerText;
+    btn.innerText = "Salvando na Nuvem...";
+    btn.disabled = true;
+    
+    try {
+        // COLOQUE O LINK DA IMPLANTAÇÃO DO SEU BANCO CENTRAL AQUI:
+        const urlBancoCentral = "https://script.google.com/macros/s/AKfycbwJ0PCV_t5SulONv1z6HLSKinHn0FunUtQ8BoRR6xqkKjG0MhwDSerDg0_vKdIjSOjFgw/exec";
+        
+        const payload = {
+            'Tolerancia_Offline': toleranceMinutes,
+            'Dias_Visualizacao': diasVis,
+            'Dias_Download': diasDown,
+            'Auto_Refresh': autoRefreshEnabled,
+            'Intervalo_Refresh': autoRefreshInterval
+        };
+
+        const resposta = await fetch(`${urlBancoCentral}?senha=${encodeURIComponent(sessaoSenha)}&action=setParams`, {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        });
+        
+        const resultadoText = await resposta.text();
+        if(!resultadoText.includes("Sucesso")) {
+             console.error("Erro da API:", resultadoText);
         }
+    } catch (e) {
+        console.error("Falha ao salvar no Banco Central:", e);
+    }
+
+    btn.innerText = txtOriginal;
+    btn.disabled = false;
+    
+    loadDashboardData();
+    startAutoRefresh();
+    showModal({ title: 'Sucesso', message: 'Parâmetros globais atualizados localmente e na nuvem.', type: 'alert' });
+}
 
         function parseDate(dateStr) {
             if(!dateStr) return null;
