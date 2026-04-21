@@ -453,8 +453,9 @@
             if (!sessaoSenha || !URL_BANCO_CENTRAL) return false;
             
             try {
+                // Adicionando "Anti-Cache" (_t=...) para garantir dados frescos do Google Sheets
                 // 1. Puxa os Biorreatores da aba 'Biorreatores'
-                const resSensores = await fetch(`${URL_BANCO_CENTRAL}?senha=${encodeURIComponent(sessaoSenha)}&action=getSensors`);
+                const resSensores = await fetch(`${URL_BANCO_CENTRAL}?senha=${encodeURIComponent(sessaoSenha)}&action=getSensors&_t=${Date.now()}`);
                 const textoSensores = await resSensores.text();
                 
                 if (textoSensores.includes("Acesso Negado")) {
@@ -467,7 +468,7 @@
                 renderManageList();
 
                 // 2. Puxa os Parâmetros da aba 'Configuracoes'
-                const resParams = await fetch(`${URL_BANCO_CENTRAL}?senha=${encodeURIComponent(sessaoSenha)}&action=getParams`);
+                const resParams = await fetch(`${URL_BANCO_CENTRAL}?senha=${encodeURIComponent(sessaoSenha)}&action=getParams&_t=${Date.now()}`);
                 const textoParams = await resParams.text();
                 
                 if (textoParams.includes("Acesso Negado")) {
@@ -526,6 +527,8 @@
             sessaoSenha = '';
             document.getElementById('input-senha').value = '';
             document.getElementById('msg-erro-login').classList.add('hidden');
+            
+            // Força a tela de bloqueio a aparecer imediatamente
             document.getElementById('login-overlay').classList.remove('hidden');
         }
 
@@ -727,10 +730,9 @@
         // LÓGICA DE DADOS (API SEGURA)
         // =====================================
         async function loadDashboardData() {
-            // Se não houver biorreatores configurados na nuvem
+            // Se a nuvem estiver vazia, leva para a tela de configurações, mas NÃO remove o bloqueio se deslogado!
             if (Object.keys(biorreatores).length === 0) {
-                document.getElementById('login-overlay').classList.add('hidden');
-                switchView('settings'); // Leva o usuário direto para a aba de configurações
+                switchView('settings');
                 const l = document.getElementById('loading');
                 if(l) { l.style.display = 'none'; } 
                 return;
@@ -762,8 +764,8 @@
             document.getElementById('loading').innerHTML = '<svg class="animate-spin h-10 w-10 text-usp-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><p>Comunicando com a API Segura...</p>';
             document.getElementById('dashboard-content').style.display = 'none';
 
-            // Prepara a URL segura
-            const urlComSenha = `${activeSensorId}?senha=${encodeURIComponent(sessaoSenha)}`;
+            // Prepara a URL segura com anti-cache
+            const urlComSenha = `${activeSensorId}?senha=${encodeURIComponent(sessaoSenha)}&_t=${Date.now()}`;
 
             try {
                 const response = await fetch(urlComSenha);
@@ -827,7 +829,7 @@
                 }
 
                 try {
-                    const url = `${id}?senha=${encodeURIComponent(sessaoSenha)}`;
+                    const url = `${id}?senha=${encodeURIComponent(sessaoSenha)}&_t=${Date.now()}`;
                     const response = await fetch(url);
                     const csvText = await response.text();
                     
@@ -1178,7 +1180,7 @@
         }
 
         window.onload = async () => { 
-            // O site INICIA sempre mostrando a tela de login como bloqueio
+            // O site INICIA sempre mostrando a tela de login como bloqueio TOTAL
             document.getElementById('login-overlay').classList.remove('hidden');
             
             // Só verifica se tem o token na sessão para poupar o utilizador de redigitar se der um F5.
