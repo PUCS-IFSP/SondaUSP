@@ -414,21 +414,63 @@
         // URL DO BANCO CENTRAL DEFINIDA GLOBALMENTE PARA TODO O SISTEMA
         const URL_BANCO_CENTRAL = "https://script.google.com/macros/s/AKfycbwJ0PCV_t5SulONv1z6HLSKinHn0FunUtQ8BoRR6xqkKjG0MhwDSerDg0_vKdIjSOjFgw/exec";
 
-        async function realizarLogin() {
-            const senha = document.getElementById('input-senha').value;
-            if (!senha) return;
-            
-            const btn = document.getElementById('btn-login');
-            btn.innerHTML = '<svg class="animate-spin h-5 w-5 text-white inline-block mr-2" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> A validar...';
-            
-            sessaoSenha = senha;
-            sessionStorage.setItem('cepema_auth_token', senha);
-            
-            await loadDashboardData(); 
-            updateFleetStatus();
-            
-            btn.innerHTML = 'Entrar no Sistema';
+async function syncDaNuvem() {
+    if (!sessaoSenha || !URL_BANCO_CENTRAL) return;
+    
+    try {
+        // 1. Puxa os Biorreatores da aba 'Biorreatores'
+        const resSensores = await fetch(`${URL_BANCO_CENTRAL}?senha=${encodeURIComponent(sessaoSenha)}&action=getSensors`);
+        const dadosSensores = await resSensores.json();
+        
+        if (Object.keys(dadosSensores).length > 0) {
+            biorreatores = dadosSensores;
+            localStorage.setItem('biorreatores_db_v2', JSON.stringify(biorreatores));
+            initSensorsDropdown();
+            renderManageList();
         }
+
+        // 2. Puxa os Parâmetros da aba 'Configuracoes'
+        const resParams = await fetch(`${URL_BANCO_CENTRAL}?senha=${encodeURIComponent(sessaoSenha)}&action=getParams`);
+        const dadosParams = await resParams.json();
+        
+        if (Object.keys(dadosParams).length > 0) {
+            if(dadosParams['Tolerancia_Offline']) toleranceMinutes = parseInt(dadosParams['Tolerancia_Offline']);
+            if(dadosParams['Dias_Visualizacao']) diasVis = parseInt(dadosParams['Dias_Visualizacao']);
+            if(dadosParams['Dias_Download']) diasDown = parseInt(dadosParams['Dias_Download']);
+            if(dadosParams['Auto_Refresh']) autoRefreshEnabled = (String(dadosParams['Auto_Refresh']).toLowerCase() === 'true');
+            if(dadosParams['Intervalo_Refresh']) autoRefreshInterval = parseInt(dadosParams['Intervalo_Refresh']);
+            
+            // Salva no cache local para o painel usar
+            localStorage.setItem('sys_tolerance_v1', toleranceMinutes);
+            localStorage.setItem('sys_dias_vis_v1', diasVis);
+            localStorage.setItem('sys_dias_down_v1', diasDown);
+            localStorage.setItem('sys_refresh_enabled_v1', autoRefreshEnabled);
+            localStorage.setItem('sys_refresh_interval_v1', autoRefreshInterval);
+            updateSettingsFields();
+        }
+    } catch (e) {
+        console.error("Erro ao sincronizar dados da nuvem:", e);
+    }
+}
+
+        async function realizarLogin() {
+    const senha = document.getElementById('input-senha').value;
+    if (!senha) return;
+    
+    const btn = document.getElementById('btn-login');
+    btn.innerHTML = '<svg class="animate-spin h-5 w-5 text-white inline-block mr-2" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> A validar...';
+    
+    sessaoSenha = senha;
+    sessionStorage.setItem('cepema_auth_token', senha);
+    
+    // --- LINHA NOVA ADICIONADA AQUI ---
+    await syncDaNuvem(); 
+    
+    await loadDashboardData(); 
+    updateFleetStatus();
+    
+    btn.innerHTML = 'Entrar no Sistema';
+}
 
         function logout() {
             sessionStorage.removeItem('cepema_auth_token');
@@ -1121,24 +1163,26 @@
         }
 
         window.onload = async () => { 
-            initSensorsDropdown(); 
-            
-            // Check session
-            if (sessaoSenha) {
-                document.getElementById('login-overlay').classList.add('hidden');
-                loadDashboardData(); 
-                updateFleetStatus();
-            } else {
-                // If no sensors are set up, hide login overlay to allow config
-                if(Object.keys(biorreatores).length === 0) {
-                     document.getElementById('login-overlay').classList.add('hidden');
-                     switchView('settings'); // Opcional: já abre na aba de configurações para ficar claro
-                } else {
-                     document.getElementById('login-overlay').classList.remove('hidden');
-                }
-            }
-            startAutoRefresh(); 
-        };
+    initSensorsDropdown(); 
+    
+    if (sessaoSenha) {
+        document.getElementById('login-overlay').classList.add('hidden');
+        
+        // --- LINHA NOVA ADICIONADA AQUI ---
+        await syncDaNuvem();
+        
+        loadDashboardData(); 
+        updateFleetStatus();
+    } else {
+        if(Object.keys(biorreatores).length === 0) {
+             document.getElementById('login-overlay').classList.add('hidden');
+             switchView('settings');
+        } else {
+             document.getElementById('login-overlay').classList.remove('hidden');
+        }
+    }
+    startAutoRefresh(); 
+};
     </script>
 </body>
 </html>
