@@ -4,42 +4,57 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SondaUSP - Monitoramento Inteligente</title>
+    
+    <!-- Bibliotecas Necessárias -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     fontFamily: { sans: ['Inter', 'sans-serif'] },
-                    colors: { usp: { 50: '#f2fcf5', 100: '#e1f8e8', 500: '#22c55e', 600: '#16a34a', 700: '#15803d', 900: '#14532d' } }
+                    colors: {
+                        usp: { 50: '#f2fcf5', 100: '#e1f8e8', 500: '#22c55e', 600: '#16a34a', 700: '#15803d', 900: '#14532d' }
+                    }
                 }
             }
         }
     </script>
+
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .table-container::-webkit-scrollbar { height: 6px; width: 6px; }
+        .table-container::-webkit-scrollbar-track { background: transparent; }
+        .table-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         .nav-link { transition: all 0.2s ease; cursor: pointer; border-bottom: 2px solid transparent; }
         .nav-link.active { color: #16a34a; border-bottom-color: #16a34a; font-weight: 600; }
-        .animate-fade-in { animation: fade-in 0.4s ease-out forwards; }
+        .nav-link:hover:not(.active) { color: #15803d; }
+        
+        .card-gradient-1 { background: linear-gradient(135deg, #dcfce7 0%, #f0fdf4 100%); }
+        .card-gradient-2 { background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%); }
+        .card-gradient-3 { background: linear-gradient(135deg, #fef3c7 0%, #fffbeb 100%); }
+        
         @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fade-in 0.4s ease-out forwards; }
     </style>
 </head>
 <body class="text-slate-800 antialiased min-h-screen flex flex-col relative overflow-x-hidden">
 
     <!-- LOGIN OVERLAY -->
     <div id="login-overlay" class="fixed inset-0 bg-slate-100/90 z-[100] flex items-center justify-center backdrop-blur-md transition-opacity duration-300">
-        <div class="bg-white p-8 rounded-3xl shadow-xl w-full max-w-md border border-slate-200 mx-4">
+        <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md border border-slate-200 mx-4">
             <div class="flex items-center gap-4 mb-6 justify-center">
                 <div class="w-14 h-14 bg-usp-50 border border-usp-100 rounded-2xl flex items-center justify-center shadow-sm">
                     <svg style="width: 28px; height: 28px;" class="text-usp-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
                 </div>
                 <h1 class="text-2xl font-bold text-slate-800 tracking-tight">Acesso Protegido</h1>
             </div>
-            <p class="text-slate-500 text-center mb-8 text-sm">Insira a palavra-passe do sistema SondaUSP.</p>
+            <p class="text-slate-500 text-center mb-8 text-sm">Insira a palavra-passe para aceder ao sistema SondaUSP.</p>
             <input type="password" id="input-senha" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 focus:outline-none focus:ring-2 focus:ring-usp-500 mb-4" placeholder="Palavra-passe" onkeypress="if(event.key === 'Enter') realizarLogin()">
-            <p id="msg-erro-login" class="text-red-500 text-sm mb-4 text-center hidden font-medium">Credenciais inválidas.</p>
+            <p id="msg-erro-login" class="text-red-500 text-sm mb-4 text-center hidden font-medium">Credenciais inválidas ou sem acesso à nuvem.</p>
             <button id="btn-login" onclick="realizarLogin()" class="w-full bg-usp-600 hover:bg-usp-700 text-white font-bold py-3 px-4 rounded-xl transition-all shadow-md">Entrar no Sistema</button>
         </div>
     </div>
@@ -57,41 +72,76 @@
                 <a onclick="switchView('home')" id="nav-home" class="nav-link active py-5 text-xs md:text-sm uppercase tracking-wide">Projeto</a>
                 <a onclick="switchView('dashboard')" id="nav-dashboard" class="nav-link py-5 text-xs md:text-sm uppercase tracking-wide">Dashboard</a>
                 <a onclick="switchView('settings')" id="nav-settings" class="nav-link py-5 text-xs md:text-sm uppercase tracking-wide">Configurações</a>
-                <a onclick="logout()" class="text-red-500 font-bold text-xs md:text-sm uppercase cursor-pointer">SAIR</a>
+                <a onclick="logout()" class="text-red-500 font-bold text-xs md:text-sm uppercase cursor-pointer ml-4">SAIR</a>
             </div>
         </div>
     </nav>
 
     <main class="flex-grow">
-        <!-- VIEW: HOME -->
+        <!-- VIEW: HOME (RESTAURADA) -->
         <div id="view-home" class="max-w-7xl mx-auto px-4 py-12 animate-fade-in">
             <div class="text-center max-w-3xl mx-auto mb-16">
                 <h1 class="text-4xl md:text-5xl font-extrabold text-slate-900 mb-6 tracking-tight">Monitoramento em <span class="text-transparent bg-clip-text bg-gradient-to-r from-usp-600 to-teal-500">Tempo Real</span></h1>
-                <p class="text-lg text-slate-600 leading-relaxed">Sistema sincronizado na nuvem para monitoramento de biorreatores. Acesse os dados de qualquer lugar com sua senha.</p>
-                <button onclick="switchView('dashboard')" class="mt-8 bg-usp-600 hover:bg-usp-700 text-white font-semibold py-3 px-8 rounded-full shadow-lg shadow-usp-500/30 transition-all">Acessar Dashboard</button>
+                <p class="text-lg text-slate-600 leading-relaxed">Hardware baseado no ESP32 coleta dados em tempo real. A captura automatizada elimina a necessidade de amostragens manuais, economizando tempo e reagentes.</p>
+                <button onclick="switchView('dashboard')" class="mt-8 bg-usp-600 hover:bg-usp-700 text-white font-semibold py-3 px-8 rounded-full shadow-lg shadow-usp-500/30 transition-all transform hover:-translate-y-1">Acessar Dashboard</button>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8 mb-16">
+                <div class="card-gradient-1 p-8 rounded-3xl border border-green-100 shadow-sm">
+                    <div class="w-12 h-12 bg-green-500 text-white rounded-xl flex items-center justify-center mb-6 shadow-md"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg></div>
+                    <h3 class="text-xl font-bold text-slate-900 mb-3">IoT na Borda</h3>
+                    <p class="text-slate-600 text-sm leading-relaxed">Processamento de dados direto no hardware para envios otimizados à nuvem USP.</p>
+                </div>
+                <div class="card-gradient-2 p-8 rounded-3xl border border-blue-100 shadow-sm">
+                    <div class="w-12 h-12 bg-blue-500 text-white rounded-xl flex items-center justify-center mb-6 shadow-md"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg></div>
+                    <h3 class="text-xl font-bold text-slate-900 mb-3">Assinatura Espectral</h3>
+                    <p class="text-slate-600 text-sm leading-relaxed">Captura da absorbância em 8 canais para identificar o estado fisiológico da cultura.</p>
+                </div>
+                <div class="card-gradient-3 p-8 rounded-3xl border border-yellow-100 shadow-sm">
+                    <div class="w-12 h-12 bg-yellow-500 text-white rounded-xl flex items-center justify-center mb-6 shadow-md"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg></div>
+                    <h3 class="text-xl font-bold text-slate-900 mb-3">Filtro de Kalman</h3>
+                    <p class="text-slate-600 text-sm leading-relaxed">Fusão de dados e modelos biocinéticos para estimativa dinâmica de biomassa.</p>
+                </div>
             </div>
         </div>
 
-        <!-- VIEW: DASHBOARD -->
+        <!-- VIEW: DASHBOARD (RESTAURADA) -->
         <div id="view-dashboard" class="hidden max-w-[1400px] mx-auto px-4 py-8 animate-fade-in">
+            <!-- Fleet Status -->
+            <details class="mb-8 bg-white border border-slate-200 rounded-2xl shadow-sm group" open>
+                <summary class="cursor-pointer p-5 font-semibold text-slate-800 hover:bg-slate-50 transition-colors list-none flex justify-between items-center rounded-2xl group-open:rounded-b-none group-open:border-b border-slate-200">
+                    <div class="flex items-center gap-4">
+                        <svg class="w-5 h-5 text-usp-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                        <h2 class="text-lg font-bold">Monitoramento de Biorreatores</h2>
+                    </div>
+                    <svg class="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"></path></svg>
+                </summary>
+                <div class="p-5 bg-slate-50/50 rounded-b-2xl">
+                    <div id="fleet-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3"></div>
+                </div>
+            </details>
+
+            <!-- Selector & Refresh -->
             <div class="mb-8 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between">
                 <div class="flex items-center gap-3 w-full md:w-auto">
-                    <div class="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center text-slate-500"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg></div>
+                    <div class="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center text-slate-500"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg></div>
                     <div class="flex-grow">
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Selecionar Biorreator</label>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Biorreator Ativo</label>
                         <select id="sensor-select" onchange="changeSensor()" class="w-full md:w-64 border-none bg-transparent text-slate-900 font-bold text-lg focus:ring-0 outline-none"></select>
                     </div>
                 </div>
-                <button onclick="loadDashboardData()" class="bg-slate-800 hover:bg-slate-900 text-white font-semibold py-2.5 px-6 rounded-xl transition-all shadow-sm flex items-center gap-2">Sincronizar Agora</button>
+                <button onclick="loadDashboardData()" class="bg-slate-800 hover:bg-slate-900 text-white font-semibold py-2.5 px-6 rounded-xl transition-all shadow-sm flex items-center gap-2">Sincronizar Dados</button>
             </div>
 
+            <!-- Loader -->
             <div id="loading" class="flex flex-col justify-center items-center h-64 text-slate-500">
                 <svg class="animate-spin h-10 w-10 text-usp-600 mb-4" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                <p id="loading-text">Buscando dados na nuvem...</p>
+                <p id="loading-text">Conectando com SondaUSP Cloud...</p>
             </div>
 
+            <!-- Content -->
             <div id="dashboard-content" class="hidden">
-                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                     <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                         <h4 class="text-slate-500 text-xs font-bold uppercase mb-2">Biomassa Estimada</h4>
                         <div class="flex items-baseline gap-2"><p id="metrica-biomassa" class="text-3xl font-extrabold text-slate-900">--</p><span class="text-slate-500 font-medium">g/L</span></div>
@@ -109,34 +159,69 @@
                         <p id="metrica-fase" class="text-2xl font-black text-slate-800">--</p>
                     </div>
                 </div>
-                <div class="w-full bg-white p-6 rounded-2xl border border-slate-200 shadow-sm mb-8">
-                    <h2 class="text-lg font-bold text-slate-800 mb-4">Cinética de Crescimento</h2>
-                    <div id="grafico-cinetica" class="w-full h-[450px]"></div>
+
+                <div class="flex flex-col gap-8 mb-8">
+                    <div class="w-full bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                        <h2 class="text-lg font-bold text-slate-800 mb-4">Cinética de Crescimento</h2>
+                        <div id="grafico-cinetica" class="w-full h-[450px]"></div>
+                    </div>
+                    <div class="w-full bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-lg font-bold text-slate-800">Assinatura Espectral</h2>
+                            <div class="flex bg-slate-100 p-1 rounded-lg">
+                                <button onclick="setSpectralMode('time')" id="btn-mode-time" class="px-3 py-1 text-[10px] font-bold rounded-md bg-white shadow-sm text-usp-600">HISTÓRICO</button>
+                                <button onclick="setSpectralMode('wave')" id="btn-mode-wave" class="px-3 py-1 text-[10px] font-bold rounded-md text-slate-500">nm</button>
+                            </div>
+                        </div>
+                        <div id="grafico-espectral" class="w-full min-h-[400px]"></div>
+                    </div>
+                </div>
+
+                <!-- Photonic Channels -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm mb-8">
+                    <h2 class="text-lg font-bold text-slate-800 mb-6">Sensores Fotônicos (U.A.)</h2>
+                    <div id="grid-canais" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-11 gap-3"></div>
+                </div>
+
+                <!-- Data Table & Export -->
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-bold text-slate-800">Registros Recentes</h2>
+                    <button onclick="downloadCSV()" class="bg-usp-600 hover:bg-usp-700 text-white py-2 px-4 rounded-xl font-bold text-xs shadow-md">Baixar CSV</button>
+                </div>
+                <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden table-container overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-50 text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            <tr id="tabela-head"></tr>
+                        </thead>
+                        <tbody id="tabela-body" class="divide-y divide-slate-100 text-slate-600"></tbody>
+                    </table>
                 </div>
             </div>
         </div>
 
-        <!-- VIEW: SETTINGS -->
+        <!-- VIEW: SETTINGS (RESTAURADA) -->
         <div id="view-settings" class="hidden max-w-[1000px] mx-auto px-4 py-12 animate-fade-in">
-            <div class="mb-8"><h1 class="text-3xl font-bold text-slate-900">Configurações da Equipe</h1><p class="text-slate-500">Ajustes salvos aqui são sincronizados para todos os membros.</p></div>
+            <div class="mb-8"><h1 class="text-3xl font-bold text-slate-900">Gerenciamento Central</h1><p class="text-slate-500">Configurações sincronizadas na nuvem para toda a equipe.</p></div>
 
-            <!-- Parâmetros Globais Cloud -->
+            <!-- Global Params with Instructions -->
             <div class="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm mb-10">
-                <h4 class="text-md font-bold text-slate-800 mb-6">⚙️ Parâmetros de Exibição (Nuvem)</h4>
+                <h4 class="text-md font-bold text-slate-800 mb-6 flex items-center gap-2">⚙️ Parâmetros Globais</h4>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                     <div>
                         <label class="block text-sm font-semibold mb-2">Tolerância Offline (Min)</label>
                         <input type="number" id="config-tolerance" class="w-full border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-usp-500">
+                        <p class="text-[10px] text-slate-400 mt-2">Intervalo máximo sem pacotes.</p>
                     </div>
                     <div>
                         <label class="block text-sm font-semibold mb-2">Visualização (Dias)</label>
                         <input type="number" id="config-dias-vis" class="w-full border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-usp-500">
+                        <p class="text-[10px] text-slate-400 mt-2">Histórico exibido nos gráficos.</p>
                     </div>
                     <div>
                         <label class="block text-sm font-semibold mb-2">Atualização Automática</label>
                         <select id="config-refresh-enabled" class="w-full border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-usp-500">
                             <option value="false">Desligada</option>
-                            <option value="true">Ligada</option>
+                            <option value="true">Ligada (5 min)</option>
                         </select>
                     </div>
                 </div>
@@ -144,11 +229,12 @@
             </div>
 
             <div class="flex justify-between items-center mb-6">
-                <h2 class="text-xl font-bold text-slate-800">Biorreatores Cadastrados</h2>
+                <h2 class="text-xl font-bold text-slate-800">Sensores Cadastrados</h2>
                 <button onclick="showAddForm()" id="btn-show-add-form" class="bg-usp-600 hover:bg-usp-700 text-white px-6 py-2.5 rounded-xl font-bold shadow-md">+ Novo Biorreator</button>
             </div>
 
-            <div id="sensor-form-container" class="hidden bg-white p-8 rounded-3xl border border-slate-200 shadow-sm mb-8">
+            <!-- New Sensor Form with restored help -->
+            <div id="sensor-form-container" class="hidden bg-white p-8 rounded-3xl border border-slate-200 shadow-sm mb-8 animate-fade-in">
                 <h4 class="text-md font-bold mb-6">➕ Adicionar Novo Tanque</h4>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <div>
@@ -156,8 +242,16 @@
                         <input type="text" id="new-sensor-name" class="w-full border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-usp-500">
                     </div>
                     <div>
-                        <label class="block text-sm font-semibold mb-2">ID da Planilha de Dados (Apenas o ID)</label>
+                        <label class="block text-sm font-semibold mb-2">ID da Planilha (Dados Brutos)</label>
                         <input type="text" id="new-sensor-id" placeholder="Ex: 1wcjHlD0..." class="w-full border border-slate-200 rounded-xl p-3 font-mono text-sm focus:ring-2 focus:ring-usp-500">
+                        
+                        <div class="mt-4 p-4 bg-slate-50 border border-slate-100 rounded-2xl">
+                            <span class="text-[11px] font-bold text-slate-600 block mb-1 uppercase tracking-wider">Onde encontro o ID?</span>
+                            <p class="text-[10px] text-slate-400 mb-2 leading-relaxed">Copie a parte destacada do link da planilha:</p>
+                            <div class="text-[9px] font-mono break-all text-slate-500 leading-tight">
+                                .../d/<span class="bg-yellow-100 text-yellow-800 px-1 rounded font-bold">1wcjHlD0...YTJLwpg</span>/edit
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="flex gap-3">
@@ -166,10 +260,11 @@
                 </div>
             </div>
 
+            <!-- Sensor List -->
             <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
                 <table class="w-full text-sm text-left">
                     <thead class="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold tracking-widest">
-                        <tr><th class="px-6 py-5">Tanque</th><th class="px-6 py-5">ID da Planilha de Dados</th><th class="px-6 py-5 text-right">Ação</th></tr>
+                        <tr><th class="px-6 py-5">Tanque</th><th class="px-6 py-5">ID no Google Drive</th><th class="px-6 py-5 text-right">Ação</th></tr>
                     </thead>
                     <tbody id="manage-sensors-list" class="divide-y divide-slate-100"></tbody>
                 </table>
@@ -177,11 +272,12 @@
         </div>
     </main>
 
+    <!-- CUSTOM MODAL -->
     <div id="custom-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-slate-900/40 backdrop-blur-sm opacity-0 transition-opacity duration-200">
         <div class="bg-white rounded-3xl p-8 max-w-sm w-full mx-4 shadow-2xl">
-            <h3 id="modal-title" class="text-xl font-bold mb-3">Sucesso</h3>
-            <p id="modal-message" class="text-slate-600 mb-8 text-sm"></p>
-            <div class="flex justify-end"><button onclick="closeModal()" class="bg-usp-600 text-white px-8 py-2.5 rounded-xl font-bold">OK</button></div>
+            <h3 id="modal-title" class="text-xl font-bold mb-3">Notificação</h3>
+            <p id="modal-message" class="text-slate-600 mb-8 text-sm leading-relaxed"></p>
+            <div class="flex justify-end"><button onclick="closeModal()" class="bg-usp-600 text-white px-8 py-2.5 rounded-xl font-bold hover:bg-usp-700">OK</button></div>
         </div>
     </div>
 
@@ -192,22 +288,41 @@
         const API_URL = "https://script.google.com/macros/s/AKfycbwJ0PCV_t5SulONv1z6HLSKinHn0FunUtQ8BoRR6xqkKjG0MhwDSerDg0_vKdIjSOjFgw/exec"; 
         // =========================================================================
 
+        const DADOS_CANAIS = {
+            'F1': {onda: '415nm', peak: 415, sigma: 12, cor: '#6366f1'},
+            'F2': {onda: '445nm', peak: 445, sigma: 12, cor: '#3b82f6'},
+            'F3': {onda: '480nm', peak: 480, sigma: 12, cor: '#0ea5e9'},
+            'F4': {onda: '515nm', peak: 515, sigma: 12, cor: '#10b981'},
+            'F5': {onda: '555nm', peak: 555, sigma: 12, cor: '#84cc16'},
+            'F6': {onda: '590nm', peak: 590, sigma: 12, cor: '#eab308'},
+            'F7': {onda: '630nm', peak: 630, sigma: 12, cor: '#f97316'},
+            'F8': {onda: '680nm', peak: 680, sigma: 12, cor: '#ef4444'},
+            'clr': {onda: 'Clear', peak: 750, sigma: 150, cor: '#475569'},
+            'nir': {onda: 'NIR', peak: 910, sigma: 35, cor: '#991b1b'},
+            'flk': {onda: 'Flicker', peak: 750, sigma: 220, cor: '#1e3a8a'}
+        };
+
         let cloudSensors = {};
         let cloudParams = { tolerance: 120, diasVis: 7, refresh: "false" };
+        let currentSpectralData = null;
+        let spectralMode = 'time';
         let sessaoSenha = sessionStorage.getItem('sonda_auth') || '';
         let activeSensorId = "";
 
+        // --- SISTEMA DE LOGIN ---
         async function realizarLogin() {
             const s = document.getElementById('input-senha').value;
             if(!s) return;
             const btn = document.getElementById('btn-login');
-            btn.innerHTML = 'Validando...';
+            btn.innerHTML = 'Validando Nuvem...';
             try {
                 const res = await fetch(`${API_URL}?senha=${encodeURIComponent(s)}&action=getSensors`);
-                const data = await res.json();
+                const text = await res.text();
+                if(text.includes("Acesso Negado")) throw new Error("Senha incorreta");
+                
                 sessaoSenha = s;
                 sessionStorage.setItem('sonda_auth', s);
-                cloudSensors = data;
+                cloudSensors = JSON.parse(text);
                 document.getElementById('login-overlay').classList.add('hidden');
                 initApp();
             } catch(e) { document.getElementById('msg-erro-login').classList.remove('hidden'); }
@@ -217,16 +332,20 @@
         function logout() { sessionStorage.removeItem('sonda_auth'); location.reload(); }
 
         async function initApp() {
-            const res = await fetch(`${API_URL}?senha=${encodeURIComponent(sessaoSenha)}&action=getParams`);
-            cloudParams = await res.json();
-            updateSettingsUI();
-            updateSensorSelect();
-            if(Object.keys(cloudSensors).length > 0) {
-                activeSensorId = Object.values(cloudSensors)[0];
-                loadDashboardData();
-            }
+            try {
+                const res = await fetch(`${API_URL}?senha=${encodeURIComponent(sessaoSenha)}&action=getParams`);
+                cloudParams = await res.json();
+                updateSettingsUI();
+                updateSensorSelect();
+                if(Object.keys(cloudSensors).length > 0) {
+                    activeSensorId = Object.values(cloudSensors)[0];
+                    loadDashboardData();
+                    updateFleetStatus();
+                }
+            } catch(e) { console.error("Falha ao sincronizar parâmetros."); }
         }
 
+        // --- DADOS ---
         async function loadDashboardData() {
             if(!activeSensorId) return;
             document.getElementById('loading').classList.remove('hidden');
@@ -234,53 +353,101 @@
             try {
                 const res = await fetch(`${API_URL}?senha=${encodeURIComponent(sessaoSenha)}&action=getData&id=${activeSensorId}`);
                 const csv = await res.text();
-                Papa.parse(csv, { header: true, skipEmptyLines: true, complete: (r) => renderDashboard(r.data) });
-            } catch(e) { document.getElementById('loading-text').innerText = "Erro ao carregar dados."; }
+                Papa.parse(csv, { header: true, skipEmptyLines: true, complete: (r) => processData(r.data) });
+            } catch(e) { document.getElementById('loading-text').innerText = "Erro ao buscar dados na planilha."; }
         }
 
-        function renderDashboard(data) {
-            if(!data || data.length === 0) return;
-            const u = data[data.length-1];
+        function processData(rawData) {
+            if(!rawData || rawData.length === 0) return;
+            window.currentFullData = rawData;
+            const dates = rawData.map(r => r[Object.keys(r)[0]]);
+            const biomass = rawData.map(r => parseFloat(r['Biomass']||0));
+            const mu = rawData.map(r => parseFloat(r['Mu']||0));
+            const spectral = {}; Object.keys(DADOS_CANAIS).forEach(ch => spectral[ch] = rawData.map(r => parseFloat(r[ch]||0)));
+            
+            currentSpectralData = { dates, spectral };
+            renderDashboard(rawData, dates, biomass, mu);
+        }
+
+        function renderDashboard(rawData, dates, biomass, mu) {
+            const u = rawData[rawData.length-1];
             document.getElementById('metrica-biomassa').innerText = parseFloat(u['Biomass']||0).toFixed(4);
             document.getElementById('metrica-temp').innerText = parseFloat(u['Temp']||0).toFixed(2);
             document.getElementById('metrica-mu').innerText = parseFloat(u['Mu']||0).toFixed(4);
             document.getElementById('metrica-fase').innerText = (u['State']||'--').replace(/_/g, ' ');
 
             Plotly.newPlot('grafico-cinetica', [{
-                x: data.map(r => r[Object.keys(r)[0]]), y: data.map(r => parseFloat(r['Biomass']||0)),
-                type: 'scatter', mode: 'lines', line: {color: '#16a34a', width: 3, shape: 'spline'}, fill: 'tozeroy', fillcolor: '#16a34a10'
-            }], { margin: { l: 50, r: 10, t: 10, b: 40 }, font: {family: 'Inter'} }, {responsive: true, displayModeBar: false});
+                x: dates, y: biomass, name: 'Biomassa', type: 'scatter', mode: 'lines',
+                line: {color: '#16a34a', width: 3, shape: 'spline'}, fill: 'tozeroy', fillcolor: '#16a34a10'
+            }, {
+                x: dates, y: mu, name: 'μ', type: 'scatter', mode: 'lines', yaxis: 'y2', line: {color: '#0ea5e9', width: 2}
+            }], { 
+                margin: { l: 50, r: 50, t: 10, b: 40 }, font: {family: 'Inter'},
+                yaxis: { title: 'Biomassa (g/L)' }, yaxis2: { title: 'μ (h⁻¹)', overlaying: 'y', side: 'right' }
+            }, {responsive: true, displayModeBar: false});
+
+            renderSpectralChart();
+            renderChannelsGrid(u);
+            renderTable(rawData);
 
             document.getElementById('loading').classList.add('hidden');
             document.getElementById('dashboard-content').classList.remove('hidden');
         }
 
+        function renderSpectralChart() {
+            if(!currentSpectralData) return;
+            const target = 'grafico-espectral';
+            if(spectralMode === 'time') {
+                const traces = Object.keys(DADOS_CANAIS).map(ch => ({
+                    x: currentSpectralData.dates, y: currentSpectralData.spectral[ch], name: DADOS_CANAIS[ch].onda,
+                    type: 'scatter', mode: 'lines', line: {color: DADOS_CANAIS[ch].cor, width: 2}
+                }));
+                Plotly.newPlot(target, traces, { margin: { l: 40, r: 10, t: 10, b: 40 }, font: {family: 'Inter'} }, {responsive: true});
+            } else {
+                const latest = {}; Object.keys(DADOS_CANAIS).forEach(ch => latest[ch] = currentSpectralData.spectral[ch].slice(-1)[0] || 0);
+                const wavelengths = []; for(let w=350; w<=950; w+=10) wavelengths.push(w);
+                const traces = Object.keys(DADOS_CANAIS).map(ch => {
+                    const info = DADOS_CANAIS[ch];
+                    return {
+                        x: wavelengths, y: wavelengths.map(w => latest[ch] * Math.exp(-Math.pow(w - info.peak, 2) / (2 * Math.pow(info.sigma||12, 2)))),
+                        name: info.onda, type: 'scatter', fill: 'tozeroy', fillcolor: info.cor + '20', line: {color: info.cor}
+                    };
+                });
+                Plotly.newPlot(target, traces, { xaxis: {title: 'nm'}, margin: { l: 40, r: 10, t: 10, b: 40 } }, {responsive: true});
+            }
+        }
+
+        function renderChannelsGrid(u) {
+            document.getElementById('grid-canais').innerHTML = Object.keys(DADOS_CANAIS).map(ch => `
+                <div class="p-3 bg-slate-50 border-b-2 rounded-xl text-center" style="border-color: ${DADOS_CANAIS[ch].cor}">
+                    <span class="text-[9px] font-bold text-slate-400 uppercase">${DADOS_CANAIS[ch].onda}</span><br>
+                    <span class="text-sm font-black" style="color: ${DADOS_CANAIS[ch].cor}">${Math.round(u[ch]||0)}</span>
+                </div>
+            `).join('');
+        }
+
+        function renderTable(data) {
+            const cols = Object.keys(data[0]);
+            document.getElementById('tabela-head').innerHTML = cols.map(c => `<th class="px-5 py-4 whitespace-nowrap">${c}</th>`).join('');
+            document.getElementById('tabela-body').innerHTML = [...data].reverse().slice(0, 10).map(r => `
+                <tr>${cols.map(c => `<td class="px-5 py-3 font-medium text-xs">${r[c]||''}</td>`).join('')}</tr>
+            `).join('');
+        }
+
+        // --- CLOUD MANAGEMENT ---
         async function saveSensorOnCloud() {
             const n = document.getElementById('new-sensor-name').value.trim();
             let id = document.getElementById('new-sensor-id').value.trim();
             if(!n || !id) return;
-            if(id.includes("/d/")) id = id.split("/d/")[1].split("/")[0]; // Limpeza caso cole link
+            if(id.includes("/d/")) id = id.split("/d/")[1].split("/")[0];
 
-            const btn = document.getElementById('btn-save-sensor');
-            btn.innerHTML = 'Sincronizando...';
             const nova = {...cloudSensors}; nova[n] = id;
             try {
                 await fetch(`${API_URL}?senha=${encodeURIComponent(sessaoSenha)}&action=setSensors`, { method: 'POST', body: JSON.stringify(nova) });
                 cloudSensors = nova;
-                cancelEdit();
-                updateSensorSelect();
-                renderManageList();
-                showPopup("Biorreator cadastrado com sucesso!");
-            } catch(e) { alert("Falha na nuvem."); }
-            btn.innerHTML = 'Confirmar Cadastro';
-        }
-
-        async function deleteSensor(n) {
-            if(!confirm(`Excluir ${n}?`)) return;
-            const nova = {...cloudSensors}; delete nova[n];
-            await fetch(`${API_URL}?senha=${encodeURIComponent(sessaoSenha)}&action=setSensors`, { method: 'POST', body: JSON.stringify(nova) });
-            cloudSensors = nova;
-            updateSensorSelect(); renderManageList();
+                cancelEdit(); updateSensorSelect(); renderManageList();
+                showPopup("Biorreator cadastrado e sincronizado!");
+            } catch(e) { alert("Falha na sincronização."); }
         }
 
         async function saveGlobalConfig() {
@@ -289,14 +456,40 @@
                 diasVis: document.getElementById('config-dias-vis').value,
                 refresh: document.getElementById('config-refresh-enabled').value
             };
-            const btn = document.getElementById('btn-save-params');
-            btn.innerHTML = 'Salvando na Nuvem...';
             try {
                 await fetch(`${API_URL}?senha=${encodeURIComponent(sessaoSenha)}&action=setParams`, { method: 'POST', body: JSON.stringify(p) });
                 cloudParams = p;
-                showPopup("Parâmetros globais sincronizados na nuvem!");
+                showPopup("Parâmetros globais salvos na nuvem!");
             } catch(e) { alert("Erro ao salvar."); }
-            btn.innerHTML = 'Salvar Parâmetros na Nuvem';
+        }
+
+        // --- UTILS ---
+        function switchView(v) {
+            ['home', 'dashboard', 'settings'].forEach(i => {
+                document.getElementById('view-'+i).classList.add('hidden');
+                document.getElementById('nav-'+i).classList.remove('active');
+            });
+            document.getElementById('view-'+v).classList.remove('hidden');
+            document.getElementById('nav-'+v).classList.add('active');
+            if(v==='settings') renderManageList();
+            if(v==='dashboard') window.dispatchEvent(new Event('resize'));
+        }
+
+        function renderManageList() {
+            document.getElementById('manage-sensors-list').innerHTML = Object.entries(cloudSensors).map(([n, id]) => `
+                <tr class="hover:bg-slate-50 transition-all">
+                    <td class="px-6 py-4 font-bold text-slate-700">${n}</td>
+                    <td class="px-6 py-4 text-xs font-mono text-slate-400 truncate max-w-[250px]">${id}</td>
+                    <td class="px-6 py-4 text-right"><button onclick="deleteSensor('${n}')" class="text-red-500 font-bold uppercase text-[10px]">Excluir</button></td>
+                </tr>`).join('');
+        }
+
+        async function deleteSensor(n) {
+            if(!confirm(`Excluir ${n}?`)) return;
+            const nova = {...cloudSensors}; delete nova[n];
+            await fetch(`${API_URL}?senha=${encodeURIComponent(sessaoSenha)}&action=setSensors`, { method: 'POST', body: JSON.stringify(nova) });
+            cloudSensors = nova;
+            updateSensorSelect(); renderManageList();
         }
 
         function updateSettingsUI() {
@@ -308,32 +501,24 @@
         function updateSensorSelect() {
             const s = document.getElementById('sensor-select');
             s.innerHTML = Object.entries(cloudSensors).map(([n, id]) => `<option value="${id}">${n}</option>`).join('');
-            document.getElementById('fleet-total').innerText = `${Object.keys(cloudSensors).length} Sensores Ativos`;
         }
 
-        function renderManageList() {
-            const list = document.getElementById('manage-sensors-list');
-            list.innerHTML = Object.entries(cloudSensors).map(([n, id]) => `
-                <tr class="hover:bg-slate-50 transition-all">
-                    <td class="px-6 py-4 font-bold text-slate-700">${n}</td>
-                    <td class="px-6 py-4 text-xs font-mono text-slate-400 truncate max-w-[200px]">${id}</td>
-                    <td class="px-6 py-4 text-right"><button onclick="deleteSensor('${n}')" class="text-red-500 font-bold uppercase text-xs">Excluir</button></td>
-                </tr>`).join('');
+        function updateFleetStatus() {
+            const grid = document.getElementById('fleet-grid');
+            grid.innerHTML = Object.entries(cloudSensors).map(([n, id]) => `
+                <div onclick="selectSensorFromFleet('${id}')" class="p-4 border border-slate-200 bg-white rounded-2xl flex items-center justify-between cursor-pointer hover:border-usp-500 transition-all">
+                    <span class="text-xs font-bold truncate">${n}</span>
+                    <span class="h-2 w-2 rounded-full bg-slate-200"></span>
+                </div>
+            `).join('');
         }
 
-        function switchView(v) {
-            ['home', 'dashboard', 'settings'].forEach(i => {
-                document.getElementById('view-'+i).classList.add('hidden');
-                document.getElementById('nav-'+i).classList.remove('active');
-            });
-            document.getElementById('view-'+v).classList.remove('hidden');
-            document.getElementById('nav-'+v).classList.add('active');
-            if(v==='settings') renderManageList();
-        }
-
+        function selectSensorFromFleet(id) { document.getElementById('sensor-select').value = id; changeSensor(); }
         function changeSensor() { activeSensorId = document.getElementById('sensor-select').value; loadDashboardData(); }
         function showAddForm() { document.getElementById('sensor-form-container').classList.remove('hidden'); document.getElementById('btn-show-add-form').classList.add('hidden'); }
         function cancelEdit() { document.getElementById('sensor-form-container').classList.add('hidden'); document.getElementById('btn-show-add-form').classList.remove('hidden'); }
+        function setSpectralMode(m) { spectralMode = m; document.getElementById('btn-mode-time').className = m === 'time' ? "px-3 py-1 text-[10px] font-bold rounded-md bg-white shadow-sm text-usp-600" : "px-3 py-1 text-[10px] font-bold rounded-md text-slate-500"; renderSpectralChart(); }
+        function downloadCSV() { const csv = Papa.unparse(window.currentFullData); const blob = new Blob([csv], {type:'text/csv'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href=url; a.download=`export_${activeSensorId}.csv`; a.click(); }
         function showPopup(m) { document.getElementById('modal-message').innerText = m; document.getElementById('custom-modal').classList.remove('hidden'); document.getElementById('custom-modal').classList.add('flex'); setTimeout(() => document.getElementById('custom-modal').classList.add('opacity-100'), 10); }
         function closeModal() { document.getElementById('custom-modal').classList.add('hidden'); }
 
