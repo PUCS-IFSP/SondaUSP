@@ -359,7 +359,6 @@
                         <input type="text" id="new-sensor-name" placeholder="Ex: Tanque Principal" class="w-full border border-slate-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-usp-500">
                     </div>
                     <div>
-                        <!-- ALTERAÇÃO DE TEXTO DO ID PARA URL DA API -->
                         <label class="block text-sm font-semibold text-slate-700 mb-2">URL da API Segura (Web App)</label>
                         <input type="text" id="new-sensor-id" placeholder="https://script.google.com/macros/s/..." class="w-full border border-slate-200 rounded-xl p-3 font-mono text-sm outline-none focus:ring-2 focus:ring-usp-500">
                         
@@ -414,73 +413,20 @@
         // URL DO BANCO CENTRAL DEFINIDA GLOBALMENTE PARA TODO O SISTEMA
         const URL_BANCO_CENTRAL = "https://script.google.com/macros/s/AKfycbwJ0PCV_t5SulONv1z6HLSKinHn0FunUtQ8BoRR6xqkKjG0MhwDSerDg0_vKdIjSOjFgw/exec";
 
-async function syncDaNuvem() {
-    if (!sessaoSenha || !URL_BANCO_CENTRAL) return;
-    
-    try {
-        // 1. Puxa os Biorreatores da aba 'Biorreatores'
-        const resSensores = await fetch(`${URL_BANCO_CENTRAL}?senha=${encodeURIComponent(sessaoSenha)}&action=getSensors`);
-        const dadosSensores = await resSensores.json();
+        // Variáveis de Sistema (Iniciam limpas na memória - 100% livres de cache)
+        let biorreatores = {};
+        let activeSensorId = null;
+        let toleranceMinutes = 120;
+        let diasVis = 7;
+        let diasDown = 30;
+        let autoRefreshEnabled = false;
+        let autoRefreshInterval = 5;
         
-        if (Object.keys(dadosSensores).length > 0) {
-            biorreatores = dadosSensores;
-            localStorage.setItem('biorreatores_db_v2', JSON.stringify(biorreatores));
-            initSensorsDropdown();
-            renderManageList();
-        }
+        let spectralMode = 'time';
+        let refreshIntervalId = null;
+        let dashboardLoaded = false;
+        let currentSpectralData = null;
 
-        // 2. Puxa os Parâmetros da aba 'Configuracoes'
-        const resParams = await fetch(`${URL_BANCO_CENTRAL}?senha=${encodeURIComponent(sessaoSenha)}&action=getParams`);
-        const dadosParams = await resParams.json();
-        
-        if (Object.keys(dadosParams).length > 0) {
-            if(dadosParams['Tolerancia_Offline']) toleranceMinutes = parseInt(dadosParams['Tolerancia_Offline']);
-            if(dadosParams['Dias_Visualizacao']) diasVis = parseInt(dadosParams['Dias_Visualizacao']);
-            if(dadosParams['Dias_Download']) diasDown = parseInt(dadosParams['Dias_Download']);
-            if(dadosParams['Auto_Refresh']) autoRefreshEnabled = (String(dadosParams['Auto_Refresh']).toLowerCase() === 'true');
-            if(dadosParams['Intervalo_Refresh']) autoRefreshInterval = parseInt(dadosParams['Intervalo_Refresh']);
-            
-            // Salva no cache local para o painel usar
-            localStorage.setItem('sys_tolerance_v1', toleranceMinutes);
-            localStorage.setItem('sys_dias_vis_v1', diasVis);
-            localStorage.setItem('sys_dias_down_v1', diasDown);
-            localStorage.setItem('sys_refresh_enabled_v1', autoRefreshEnabled);
-            localStorage.setItem('sys_refresh_interval_v1', autoRefreshInterval);
-            updateSettingsFields();
-        }
-    } catch (e) {
-        console.error("Erro ao sincronizar dados da nuvem:", e);
-    }
-}
-
-        async function realizarLogin() {
-    const senha = document.getElementById('input-senha').value;
-    if (!senha) return;
-    
-    const btn = document.getElementById('btn-login');
-    btn.innerHTML = '<svg class="animate-spin h-5 w-5 text-white inline-block mr-2" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> A validar...';
-    
-    sessaoSenha = senha;
-    sessionStorage.setItem('cepema_auth_token', senha);
-    
-    // --- LINHA NOVA ADICIONADA AQUI ---
-    await syncDaNuvem(); 
-    
-    await loadDashboardData(); 
-    updateFleetStatus();
-    
-    btn.innerHTML = 'Entrar no Sistema';
-}
-
-        function logout() {
-            sessionStorage.removeItem('cepema_auth_token');
-            sessaoSenha = '';
-            document.getElementById('input-senha').value = '';
-            document.getElementById('msg-erro-login').classList.add('hidden');
-            document.getElementById('login-overlay').classList.remove('hidden');
-        }
-
-        // --- CONFIGURAÇÃO GLOBAL ---
         const DADOS_CANAIS = {
             'F1': {onda: '415nm', peak: 415, sigma: 12, cor: '#6366f1', dash: 'solid'},
             'F2': {onda: '445nm', peak: 445, sigma: 12, cor: '#3b82f6', dash: 'solid'},
@@ -503,17 +449,85 @@ async function syncDaNuvem() {
             'N/A': { bg: '#ffffff', border: '#e2e8f0', text: '#94a3b8' }
         };
 
-        let biorreatores = JSON.parse(localStorage.getItem('biorreatores_db_v2')) || {};
-        let activeSensorId = Object.values(biorreatores)[0];
-        let toleranceMinutes = parseInt(localStorage.getItem('sys_tolerance_v1')) || 120;
-        let diasVis = parseInt(localStorage.getItem('sys_dias_vis_v1')) || 7;
-        let diasDown = parseInt(localStorage.getItem('sys_dias_down_v1')) || 30;
-        let autoRefreshEnabled = localStorage.getItem('sys_refresh_enabled_v1') === 'true';
-        let autoRefreshInterval = parseInt(localStorage.getItem('sys_refresh_interval_v1')) || 5;
-        let spectralMode = 'time';
-        let refreshIntervalId = null;
-        let dashboardLoaded = false;
-        let currentSpectralData = null;
+        async function syncDaNuvem() {
+            if (!sessaoSenha || !URL_BANCO_CENTRAL) return false;
+            
+            try {
+                // 1. Puxa os Biorreatores da aba 'Biorreatores'
+                const resSensores = await fetch(`${URL_BANCO_CENTRAL}?senha=${encodeURIComponent(sessaoSenha)}&action=getSensors`);
+                const textoSensores = await resSensores.text();
+                
+                if (textoSensores.includes("Acesso Negado")) {
+                    return false;
+                }
+                
+                const dadosSensores = JSON.parse(textoSensores);
+                biorreatores = Object.keys(dadosSensores).length > 0 ? dadosSensores : {};
+                initSensorsDropdown();
+                renderManageList();
+
+                // 2. Puxa os Parâmetros da aba 'Configuracoes'
+                const resParams = await fetch(`${URL_BANCO_CENTRAL}?senha=${encodeURIComponent(sessaoSenha)}&action=getParams`);
+                const textoParams = await resParams.text();
+                
+                if (textoParams.includes("Acesso Negado")) {
+                    return false;
+                }
+
+                const dadosParams = JSON.parse(textoParams);
+                if (Object.keys(dadosParams).length > 0) {
+                    if(dadosParams['Tolerancia_Offline']) toleranceMinutes = parseInt(dadosParams['Tolerancia_Offline']);
+                    if(dadosParams['Dias_Visualizacao']) diasVis = parseInt(dadosParams['Dias_Visualizacao']);
+                    if(dadosParams['Dias_Download']) diasDown = parseInt(dadosParams['Dias_Download']);
+                    if(dadosParams['Auto_Refresh']) autoRefreshEnabled = (String(dadosParams['Auto_Refresh']).toLowerCase() === 'true');
+                    if(dadosParams['Intervalo_Refresh']) autoRefreshInterval = parseInt(dadosParams['Intervalo_Refresh']);
+                    
+                    updateSettingsFields();
+                }
+                
+                return true;
+            } catch (e) {
+                console.error("Erro ao sincronizar dados da nuvem:", e);
+                return false;
+            }
+        }
+
+        async function realizarLogin() {
+            const senha = document.getElementById('input-senha').value;
+            if (!senha) return;
+            
+            const btn = document.getElementById('btn-login');
+            btn.innerHTML = '<svg class="animate-spin h-5 w-5 text-white inline-block mr-2" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> A validar...';
+            
+            sessaoSenha = senha;
+            
+            // Tenta baixar todos os dados. Se for sucesso, a senha tá correta!
+            const sucesso = await syncDaNuvem(); 
+            
+            if (sucesso) {
+                sessionStorage.setItem('cepema_auth_token', senha);
+                document.getElementById('login-overlay').classList.add('hidden');
+                document.getElementById('msg-erro-login').classList.add('hidden');
+                
+                await loadDashboardData(); 
+                updateFleetStatus();
+            } else {
+                document.getElementById('msg-erro-login').innerText = "Palavra-passe incorreta ou acesso revogado.";
+                document.getElementById('msg-erro-login').classList.remove('hidden');
+                sessaoSenha = '';
+                sessionStorage.removeItem('cepema_auth_token');
+            }
+            
+            btn.innerHTML = 'Entrar no Sistema';
+        }
+
+        function logout() {
+            sessionStorage.removeItem('cepema_auth_token');
+            sessaoSenha = '';
+            document.getElementById('input-senha').value = '';
+            document.getElementById('msg-erro-login').classList.add('hidden');
+            document.getElementById('login-overlay').classList.remove('hidden');
+        }
 
         // --- SISTEMA DE MODAL ---
         function showModal({ title, message, type = 'alert', confirmText = 'OK', cancelText = 'Cancelar', onConfirm = null }) {
@@ -636,54 +650,49 @@ async function syncDaNuvem() {
         }
 
         async function saveGeneralConfig() {
-    toleranceMinutes = parseInt(document.getElementById('config-tolerance').value) || 120;
-    diasVis = parseInt(document.getElementById('config-dias-vis').value) || 7;
-    diasDown = parseInt(document.getElementById('config-dias-down').value) || 30;
-    autoRefreshEnabled = document.getElementById('config-refresh-enabled').value === 'true';
-    autoRefreshInterval = parseInt(document.getElementById('config-refresh-interval').value) || 5;
+            toleranceMinutes = parseInt(document.getElementById('config-tolerance').value) || 120;
+            diasVis = parseInt(document.getElementById('config-dias-vis').value) || 7;
+            diasDown = parseInt(document.getElementById('config-dias-down').value) || 30;
+            autoRefreshEnabled = document.getElementById('config-refresh-enabled').value === 'true';
+            autoRefreshInterval = parseInt(document.getElementById('config-refresh-interval').value) || 5;
 
-    // 1. Salva localmente (como já fazia)
-    localStorage.setItem('sys_tolerance_v1', toleranceMinutes);
-    localStorage.setItem('sys_dias_vis_v1', diasVis);
-    localStorage.setItem('sys_dias_down_v1', diasDown);
-    localStorage.setItem('sys_refresh_enabled_v1', autoRefreshEnabled);
-    localStorage.setItem('sys_refresh_interval_v1', autoRefreshInterval);
-    
-    // 2. Salva no Banco Central (Google Sheets)
-    const btn = document.getElementById('btn-save-config');
-    const txtOriginal = btn.innerText;
-    btn.innerText = "Salvando na Nuvem...";
-    btn.disabled = true;
-    
-    try {
-        const payload = {
-            'Tolerancia_Offline': toleranceMinutes,
-            'Dias_Visualizacao': diasVis,
-            'Dias_Download': diasDown,
-            'Auto_Refresh': autoRefreshEnabled,
-            'Intervalo_Refresh': autoRefreshInterval
-        };
+            // Salva DIRETAMENTE no Banco Central (Google Sheets) sem cache
+            const btn = document.getElementById('btn-save-config');
+            const txtOriginal = btn.innerText;
+            btn.innerText = "Salvando na Nuvem...";
+            btn.disabled = true;
+            
+            try {
+                const payload = {
+                    'Tolerancia_Offline': toleranceMinutes,
+                    'Dias_Visualizacao': diasVis,
+                    'Dias_Download': diasDown,
+                    'Auto_Refresh': autoRefreshEnabled,
+                    'Intervalo_Refresh': autoRefreshInterval
+                };
 
-        const resposta = await fetch(`${URL_BANCO_CENTRAL}?senha=${encodeURIComponent(sessaoSenha)}&action=setParams`, {
-            method: 'POST',
-            body: JSON.stringify(payload)
-        });
-        
-        const resultadoText = await resposta.text();
-        if(!resultadoText.includes("Sucesso")) {
-             console.error("Erro da API:", resultadoText);
+                const resposta = await fetch(`${URL_BANCO_CENTRAL}?senha=${encodeURIComponent(sessaoSenha)}&action=setParams`, {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+                
+                const resultadoText = await resposta.text();
+                if(!resultadoText.includes("Sucesso")) {
+                     console.error("Erro da API:", resultadoText);
+                     showModal({ title: 'Erro', message: 'Houve um erro ao gravar na nuvem.', type: 'alert' });
+                } else {
+                    loadDashboardData();
+                    startAutoRefresh();
+                    showModal({ title: 'Sucesso', message: 'Parâmetros globais atualizados com sucesso.', type: 'alert' });
+                }
+            } catch (e) {
+                console.error("Falha ao salvar no Banco Central:", e);
+                showModal({ title: 'Falha', message: 'Sem conexão com a nuvem.', type: 'alert' });
+            }
+
+            btn.innerText = txtOriginal;
+            btn.disabled = false;
         }
-    } catch (e) {
-        console.error("Falha ao salvar no Banco Central:", e);
-    }
-
-    btn.innerText = txtOriginal;
-    btn.disabled = false;
-    
-    loadDashboardData();
-    startAutoRefresh();
-    showModal({ title: 'Sucesso', message: 'Parâmetros globais atualizados localmente e na nuvem.', type: 'alert' });
-}
 
         function parseDate(dateStr) {
             if(!dateStr) return null;
@@ -715,14 +724,15 @@ async function syncDaNuvem() {
         }
 
         // =====================================
-        // NOVA LÓGICA DE DADOS (API SEGURA)
+        // LÓGICA DE DADOS (API SEGURA)
         // =====================================
         async function loadDashboardData() {
-            // Se não houver biorreatores configurados
+            // Se não houver biorreatores configurados na nuvem
             if (Object.keys(biorreatores).length === 0) {
-                document.getElementById('login-overlay').classList.add('hidden'); // Oculta login para permitir configuração
+                document.getElementById('login-overlay').classList.add('hidden');
+                switchView('settings'); // Leva o usuário direto para a aba de configurações
                 const l = document.getElementById('loading');
-                if(l) { l.innerHTML = "<p class='text-slate-500'>Por favor, adicione um Biorreator nas Configurações.</p>"; l.style.display = 'flex'; }
+                if(l) { l.style.display = 'none'; } 
                 return;
             }
 
@@ -731,13 +741,13 @@ async function syncDaNuvem() {
             }
             if (!activeSensorId) return;
 
-            // Se tem biorreatores mas não está logado
+            // Se não estiver logado, barrar tudo
             if (!sessaoSenha) {
                 document.getElementById('login-overlay').classList.remove('hidden');
                 return;
             }
 
-            // VALIDAÇÃO DE SEGURANÇA: Verifica se é o URL da API ou um ID antigo perdido no cache
+            // VALIDAÇÃO DE SEGURANÇA: Verifica se é o URL da API ou um ID antigo perdido
             if (!activeSensorId.startsWith('http')) {
                 document.getElementById('loading').style.display = 'none';
                 showModal({
@@ -810,7 +820,6 @@ async function syncDaNuvem() {
             }
 
             for(let [nome, id] of entries) {
-                // Ignora a checagem se for um ID antigo que não é URL
                 if(!id.startsWith('http')) {
                     offline++;
                     renderFleetBox(nome, id, false);
@@ -1079,34 +1088,34 @@ async function syncDaNuvem() {
             if(original && original !== n) delete biorreatores[original];
             
             biorreatores[n] = id;
-            localStorage.setItem('biorreatores_db_v2', JSON.stringify(biorreatores));
-            initSensorsDropdown(); renderManageList(); cancelEdit();
             
-            // Sincronizando lista de Biorreatores com o Banco Central (Nuvem)
-            if (sessaoSenha) {
-                try {
-                    await fetch(`${URL_BANCO_CENTRAL}?senha=${encodeURIComponent(sessaoSenha)}&action=setSensors`, {
-                        method: 'POST',
-                        body: JSON.stringify(biorreatores)
-                    });
-                } catch (e) {
-                    console.error("Falha ao salvar biorreatores na nuvem:", e);
+            // Sincronizando DIRETAMENTE na nuvem
+            try {
+                const resposta = await fetch(`${URL_BANCO_CENTRAL}?senha=${encodeURIComponent(sessaoSenha)}&action=setSensors`, {
+                    method: 'POST',
+                    body: JSON.stringify(biorreatores)
+                });
+                const resultadoText = await resposta.text();
+
+                if(!resultadoText.includes("Sucesso")) {
+                     console.error("Erro da API:", resultadoText);
+                     showModal({ title: 'Erro', message: 'Erro ao gravar biorreator na nuvem.', type: 'alert' });
+                     delete biorreatores[n]; // Reverte
+                } else {
+                    initSensorsDropdown(); renderManageList(); cancelEdit();
+                    showModal({ title: 'Sucesso', message: original ? 'Cadastro atualizado com sucesso!' : 'Novo Biorreator cadastrado!', type: 'alert' });
+                    
+                    if(Object.keys(biorreatores).length === 1) {
+                        activeSensorId = id;
+                    }
                 }
+            } catch (e) {
+                console.error("Falha ao salvar biorreatores na nuvem:", e);
+                showModal({ title: 'Erro', message: 'Sem conexão com a nuvem.', type: 'alert' });
             }
 
             btn.innerText = txtOriginal;
             btn.disabled = false;
-            
-            // Se for o primeiro sensor a ser adicionado, ativa a segurança imediatamente
-            if(Object.keys(biorreatores).length === 1) {
-                activeSensorId = id;
-                if (!sessaoSenha) {
-                    document.getElementById('login-overlay').classList.remove('hidden');
-                    return; // Interrompe aqui para obrigar a fazer login
-                }
-            }
-            
-            showModal({ title: 'Sucesso', message: original ? 'Cadastro atualizado com sucesso!' : 'Novo Biorreator cadastrado!', type: 'alert' });
         }
 
         function deleteSensor(n) { 
@@ -1116,21 +1125,27 @@ async function syncDaNuvem() {
                 type: 'confirm',
                 confirmText: 'Excluir',
                 onConfirm: async () => {
+                    // Armazena backup caso a nuvem falhe
+                    const backupBiorreatores = {...biorreatores};
                     delete biorreatores[n]; 
-                    localStorage.setItem('biorreatores_db_v2', JSON.stringify(biorreatores)); 
-                    renderManageList(); 
-                    initSensorsDropdown(); 
                     
-                    // Sincronizando exclusão com o Banco Central (Nuvem)
-                    if (sessaoSenha) {
-                        try {
-                            await fetch(`${URL_BANCO_CENTRAL}?senha=${encodeURIComponent(sessaoSenha)}&action=setSensors`, {
-                                method: 'POST',
-                                body: JSON.stringify(biorreatores)
-                            });
-                        } catch (e) {
-                            console.error("Falha ao excluir na nuvem:", e);
+                    try {
+                        const resposta = await fetch(`${URL_BANCO_CENTRAL}?senha=${encodeURIComponent(sessaoSenha)}&action=setSensors`, {
+                            method: 'POST',
+                            body: JSON.stringify(biorreatores)
+                        });
+                        const resultadoText = await resposta.text();
+                        
+                        if(resultadoText.includes("Sucesso")) {
+                            renderManageList(); 
+                            initSensorsDropdown();
+                        } else {
+                            biorreatores = backupBiorreatores; // Reverte erro
+                            showModal({ title: 'Erro', message: 'Erro ao excluir na nuvem.', type: 'alert' });
                         }
+                    } catch (e) {
+                        biorreatores = backupBiorreatores;
+                        showModal({ title: 'Erro', message: 'Sem conexão com a nuvem.', type: 'alert' });
                     }
                 }
             });
@@ -1163,26 +1178,30 @@ async function syncDaNuvem() {
         }
 
         window.onload = async () => { 
-    initSensorsDropdown(); 
-    
-    if (sessaoSenha) {
-        document.getElementById('login-overlay').classList.add('hidden');
-        
-        // --- LINHA NOVA ADICIONADA AQUI ---
-        await syncDaNuvem();
-        
-        loadDashboardData(); 
-        updateFleetStatus();
-    } else {
-        if(Object.keys(biorreatores).length === 0) {
-             document.getElementById('login-overlay').classList.add('hidden');
-             switchView('settings');
-        } else {
-             document.getElementById('login-overlay').classList.remove('hidden');
-        }
-    }
-    startAutoRefresh(); 
-};
+            // O site INICIA sempre mostrando a tela de login como bloqueio
+            document.getElementById('login-overlay').classList.remove('hidden');
+            
+            // Só verifica se tem o token na sessão para poupar o utilizador de redigitar se der um F5.
+            if (sessaoSenha) {
+                const btn = document.getElementById('btn-login');
+                const btnOriginalText = btn.innerHTML;
+                btn.innerHTML = 'Sincronizando Banco de Dados...';
+                
+                const sucesso = await syncDaNuvem();
+                
+                if (sucesso) {
+                    document.getElementById('login-overlay').classList.add('hidden');
+                    loadDashboardData(); 
+                    updateFleetStatus();
+                } else {
+                    // Senha da sessão ficou velha, foi revogada, ou ocorreu um erro
+                    logout(); 
+                }
+                btn.innerHTML = btnOriginalText;
+            }
+            
+            startAutoRefresh(); 
+        };
     </script>
 </body>
 </html>
