@@ -65,7 +65,7 @@
                 <input type="password" id="input-senha" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 focus:outline-none focus:ring-2 focus:ring-usp-500 transition-all" placeholder="Palavra-passe" onkeypress="if(event.key === 'Enter') realizarLogin()">
             </div>
             
-            <p id="msg-erro-login" class="text-red-500 text-sm mb-4 text-center hidden font-medium">Credenciais inválidas.</p>
+            <p id="msg-erro-login" class="text-red-500 text-sm mb-4 text-center hidden font-medium">Credenciais inválidas ou sem acesso à rede.</p>
             
             <button id="btn-login" onclick="realizarLogin()" class="w-full bg-usp-600 hover:bg-usp-700 text-white font-bold py-3 px-4 rounded-xl transition-all shadow-md flex justify-center items-center gap-2">
                 Entrar no Sistema
@@ -83,11 +83,11 @@
                     </div>
                     <span class="font-bold text-xl tracking-tight text-slate-900">Sonda<span class="text-usp-600">USP</span></span>
                 </div>
-                <div class="flex items-center space-x-6 md:space-x-8">
-                    <a onclick="switchView('home')" id="nav-home" class="nav-link active py-5 text-xs md:text-sm uppercase tracking-wide">Projeto</a>
-                    <a onclick="switchView('dashboard')" id="nav-dashboard" class="nav-link py-5 text-xs md:text-sm uppercase tracking-wide">Dashboard</a>
-                    <a onclick="switchView('settings')" id="nav-settings" class="nav-link py-5 text-xs md:text-sm uppercase tracking-wide">Configurações</a>
-                    <a onclick="logout()" class="py-5 text-xs md:text-sm uppercase tracking-wide text-red-500 font-bold cursor-pointer ml-4">Sair</a>
+                <div class="flex items-center space-x-8">
+                    <a onclick="switchView('home')" id="nav-home" class="nav-link active py-5 text-sm uppercase tracking-wide text-slate-600">Projeto</a>
+                    <a onclick="switchView('dashboard')" id="nav-dashboard" class="nav-link py-5 text-sm uppercase tracking-wide text-slate-600">Dashboard</a>
+                    <a onclick="switchView('settings')" id="nav-settings" class="nav-link py-5 text-sm uppercase tracking-wide text-slate-600">Configurações</a>
+                    <a onclick="logout()" class="py-5 text-sm uppercase tracking-wide text-red-500 font-bold cursor-pointer transition-colors ml-4 flex items-center gap-1">SAIR</a>
                 </div>
             </div>
         </div>
@@ -97,9 +97,9 @@
         <!-- VIEW: HOME -->
         <div id="view-home" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 animate-fade-in">
             <div class="text-center max-w-3xl mx-auto mb-16">
-                <h1 class="text-4xl md:text-5xl font-extrabold text-slate-900 mb-6 tracking-tight">Monitoramento Espectral em <span class="text-transparent bg-clip-text bg-gradient-to-r from-usp-600 to-teal-500">Tempo Real</span></h1>
+                <h1 class="text-4xl md:text-5xl font-extrabold text-slate-900 mb-6 tracking-tight">Monitoramento Centralizado em <span class="text-transparent bg-clip-text bg-gradient-to-r from-usp-600 to-teal-500">Tempo Real</span></h1>
                 <p class="text-lg text-slate-600 mb-8 leading-relaxed">
-                    Um sistema inteligente de IoT desenvolvido para o monitoramento contínuo de cultivos. Dados centralizados e protegidos na nuvem para toda a equipa de investigação.
+                    Sistema de monitoramento inteligente com base de dados na nuvem. Gerencie múltiplos biorreatores de forma sincronizada com toda a equipe de pesquisa.
                 </p>
                 <div class="flex justify-center gap-4">
                     <button onclick="switchView('dashboard')" class="bg-usp-600 hover:bg-usp-700 text-white font-semibold py-3 px-8 rounded-full shadow-lg shadow-usp-500/30 transition-all transform hover:-translate-y-1">
@@ -116,22 +116,22 @@
                     <div class="w-12 h-12 bg-green-500 text-white rounded-xl flex items-center justify-center mb-6 shadow-md mx-auto">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
                     </div>
-                    <h3 class="text-xl font-bold text-slate-900 mb-3">Dados Centralizados</h3>
-                    <p class="text-slate-600 text-sm">Todos os biorreatores cadastrados ficam salvos na nuvem e aparecem automaticamente para qualquer membro da equipe logado.</p>
+                    <h3 class="text-xl font-bold text-slate-900 mb-3">Sincronização Global</h3>
+                    <p class="text-slate-600 text-sm">Biorreatores e configurações salvos na nuvem ficam disponíveis instantaneamente para todos os membros logados.</p>
                 </div>
                 <div class="card-gradient-2 p-8 rounded-3xl border border-blue-100 shadow-sm">
                     <div class="w-12 h-12 bg-blue-500 text-white rounded-xl flex items-center justify-center mb-6 shadow-md mx-auto">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
                     </div>
                     <h3 class="text-xl font-bold text-slate-900 mb-3">API Segura</h3>
-                    <p class="text-slate-600 text-sm">A comunicação entre o painel e o Google Sheets é intermediada por uma camada de segurança que exige validação por palavra-passe.</p>
+                    <p class="text-slate-600 text-sm">Proteção por criptografia de transporte e validação de palavra-passe para acesso total aos dados de pesquisa.</p>
                 </div>
                 <div class="card-gradient-3 p-8 rounded-3xl border border-yellow-100 shadow-sm">
                     <div class="w-12 h-12 bg-yellow-500 text-white rounded-xl flex items-center justify-center mb-6 shadow-md mx-auto">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
                     </div>
                     <h3 class="text-xl font-bold text-slate-900 mb-3">Escalabilidade</h3>
-                    <p class="text-slate-600 text-sm">Adicione quantos sensores forem necessários diretamente pela aba de configurações sem precisar alterar uma única linha de código.</p>
+                    <p class="text-slate-600 text-sm">Adicione novos tanques em segundos pela interface, sem necessidade de alterar o código-fonte no GitHub.</p>
                 </div>
             </div>
         </div>
@@ -142,7 +142,7 @@
                 <summary class="cursor-pointer p-5 font-semibold text-slate-800 hover:bg-slate-50 transition-colors list-none flex justify-between items-center rounded-2xl group-open:rounded-b-none group-open:border-b border-slate-200">
                     <div class="flex items-center gap-4">
                         <svg class="w-5 h-5 text-usp-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-                        <h2 class="text-lg font-bold">Monitoramento Ativo</h2>
+                        <h2 class="text-lg font-bold">Status da Frota</h2>
                         <span class="text-xs bg-slate-100 px-2 py-1 rounded text-slate-500 font-medium" id="fleet-total">0 Sensores</span>
                     </div>
                     <svg class="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
@@ -158,7 +158,7 @@
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
                     </div>
                     <div class="flex-grow">
-                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Selecionar Tanque</label>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Biorreator Ativo</label>
                         <select id="sensor-select" onchange="changeSensor()" class="w-full md:w-64 border-none bg-transparent text-slate-900 font-bold text-lg focus:ring-0 outline-none"></select>
                     </div>
                 </div>
@@ -170,10 +170,10 @@
 
             <div id="loading" class="flex flex-col justify-center items-center h-64 text-slate-500">
                 <svg class="animate-spin h-10 w-10 text-usp-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                <p id="loading-text">Conectando com o Cérebro Central...</p>
+                <p id="loading-text">Conectando ao SondaUSP Cloud...</p>
             </div>
 
-            <div id="dashboard-content" class="hidden">
+            <div id="dashboard-content" class="hidden animate-fade-in">
                  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                     <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                         <h4 class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Biomassa Estimada</h4>
@@ -182,7 +182,24 @@
                             <span class="text-slate-500 font-medium">g/L</span>
                         </div>
                     </div>
-                    <!-- Outras métricas aqui... -->
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                        <h4 class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Temperatura</h4>
+                        <div class="flex items-baseline gap-2">
+                            <p id="metrica-temp" class="text-3xl font-extrabold text-slate-900">--</p>
+                            <span class="text-slate-500 font-medium">°C</span>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                        <h4 class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Crescimento (μ)</h4>
+                        <div class="flex items-baseline gap-2">
+                            <p id="metrica-mu" class="text-3xl font-extrabold text-slate-900">--</p>
+                            <span class="text-slate-500 font-medium">h⁻¹</span>
+                        </div>
+                    </div>
+                    <div id="card-fase" class="p-6 rounded-2xl border border-slate-200 shadow-sm bg-white">
+                        <h4 class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Estado Atual</h4>
+                        <p id="metrica-fase" class="text-2xl font-black text-slate-800">--</p>
+                    </div>
                 </div>
 
                 <div class="w-full bg-white p-6 rounded-2xl border border-slate-200 shadow-sm mb-8">
@@ -192,18 +209,68 @@
             </div>
         </div>
 
-        <!-- VIEW: SETTINGS -->
+        <!-- VIEW: SETTINGS (RESTAURADA TOTALMENTE) -->
         <div id="view-settings" class="hidden max-w-[1000px] mx-auto px-4 sm:px-6 lg:px-8 py-12 animate-fade-in">
-            <div class="mb-8 flex justify-between items-end">
-                <div>
-                    <h1 class="text-3xl font-bold text-slate-900 tracking-tight">Gestão Centralizada</h1>
-                    <p class="text-slate-500 mt-1">Alterações aqui são salvas na nuvem e sincronizadas para toda a equipa.</p>
+            <div class="mb-8">
+                <h1 class="text-3xl font-bold text-slate-900 tracking-tight">Gerenciamento Centralizado</h1>
+                <p class="text-slate-500 mt-1">Gerencie os parâmetros globais e a frota de sensores sincronizada na nuvem.</p>
+            </div>
+
+            <!-- BLOCO RESTAURADO: Parâmetros Globais -->
+            <div class="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm relative mb-10">
+                <h4 class="text-md font-bold text-slate-800 mb-6 flex items-center gap-2">
+                    <span class="text-slate-400">⚙️</span> Parâmetros Globais da Equipe
+                </h4>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Tolerância Offline (Minutos)</label>
+                        <input type="number" id="config-tolerance" class="w-full border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-usp-500 outline-none transition-all">
+                        <p class="text-[11px] text-slate-500 mt-2">Tempo sem dados para marcar como <span class="text-red-500 font-bold">🔴 Offline</span>.</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Visualização (Dias)</label>
+                        <input type="number" id="config-dias-vis" class="w-full border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-usp-500 outline-none transition-all">
+                        <p class="text-[11px] text-slate-500 mt-2">Histórico exibido nos gráficos e tabela.</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Exportação CSV (Dias)</label>
+                        <input type="number" id="config-dias-down" class="w-full border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-usp-500 outline-none transition-all">
+                        <p class="text-[11px] text-slate-500 mt-2">Limite de dias exportados no download.</p>
+                    </div>
                 </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Atualização Automática</label>
+                        <div class="flex items-center gap-3">
+                            <button type="button" id="btn-toggle-refresh" onclick="toggleRefreshSwitch()" class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 bg-slate-200" role="switch">
+                                <span id="dot-toggle-refresh" class="inline-block h-5 w-5 transform rounded-full bg-white shadow translate-x-0 transition duration-200"></span>
+                            </button>
+                            <span id="toggle-label" class="text-xs font-bold text-slate-500 uppercase">Desligada</span>
+                        </div>
+                        <input type="hidden" id="config-refresh-enabled" value="false">
+                    </div>
+                    <div id="container-refresh-interval" class="hidden">
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Intervalo (Minutos)</label>
+                        <input type="number" id="config-refresh-interval" class="w-full border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-usp-500 outline-none transition-all">
+                    </div>
+                </div>
+
+                <button onclick="saveGlobalConfigOnCloud()" id="btn-save-global" class="bg-slate-900 hover:bg-black text-white font-bold py-3 px-8 rounded-xl transition-all shadow-md">
+                    Salvar Parâmetros na Nuvem
+                </button>
+            </div>
+
+            <!-- Header da Lista -->
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-slate-800">Frota de Biorreatores</h2>
                 <button onclick="showAddForm()" id="btn-show-add-form" class="bg-usp-600 hover:bg-usp-700 text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-md transition-all">
                     + Novo Biorreator
                 </button>
             </div>
 
+            <!-- Adicionar Novo (RESTORED UI) -->
             <div id="sensor-form-container" class="hidden bg-white p-8 rounded-3xl border border-slate-200 shadow-sm mb-8 animate-fade-in">
                 <h4 id="sensor-form-title" class="text-md font-bold text-slate-800 mb-6 flex items-center gap-2">
                     <span class="text-usp-600">➕</span> Adicionar Novo Tanque
@@ -211,10 +278,10 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <div>
                         <label class="block text-sm font-semibold text-slate-700 mb-2">Nome de Exibição</label>
-                        <input type="text" id="new-sensor-name" placeholder="Ex: Tanque Principal" class="w-full border border-slate-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-usp-500">
+                        <input type="text" id="new-sensor-name" placeholder="Ex: Microalgas 01" class="w-full border border-slate-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-usp-500">
                     </div>
                     <div>
-                        <label class="block text-sm font-semibold text-slate-700 mb-2">ID da Planilha (Google Sheets)</label>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">ID da Planilha Google</label>
                         <input type="text" id="new-sensor-id" placeholder="Ex: 1wcjHlD0..." class="w-full border border-slate-200 rounded-xl p-3 font-mono text-sm outline-none focus:ring-2 focus:ring-usp-500">
                     </div>
                 </div>
@@ -227,7 +294,7 @@
             <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
                 <table class="w-full text-sm text-left">
                     <thead class="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold tracking-widest">
-                        <tr><th class="px-6 py-5">Nome do Tanque</th><th class="px-6 py-5">ID da Folha</th><th class="px-6 py-5 text-right">Ações</th></tr>
+                        <tr><th class="px-6 py-5">Identificação</th><th class="px-6 py-5">ID do Banco de Dados</th><th class="px-6 py-5 text-right">Ações</th></tr>
                     </thead>
                     <tbody id="manage-sensors-list" class="divide-y divide-slate-100"></tbody>
                 </table>
@@ -235,37 +302,49 @@
         </div>
     </main>
 
+    <!-- Modal Customizado -->
+    <div id="custom-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-slate-900/40 backdrop-blur-sm transition-opacity duration-200 opacity-0">
+        <div id="custom-modal-content" class="bg-white rounded-3xl p-8 max-w-sm w-full mx-4 shadow-2xl transform scale-95 transition-transform duration-200">
+            <h3 id="custom-modal-title" class="text-xl font-bold text-slate-900 mb-3">Título</h3>
+            <p id="custom-modal-message" class="text-slate-600 mb-8 leading-relaxed text-sm">Mensagem.</p>
+            <div class="flex gap-3 justify-end">
+                <button id="custom-modal-cancel" class="px-5 py-2.5 rounded-xl font-bold text-slate-600 hover:bg-slate-50 transition-all hidden">Cancelar</button>
+                <button id="custom-modal-confirm" class="px-5 py-2.5 rounded-xl font-bold text-white bg-usp-600 hover:bg-usp-700 shadow-md transition-all">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // =========================================================================
-        // CONFIGURAÇÃO DA API CENTRAL - COLOQUE O SEU URL AQUI!
+        // ⚠️ CONFIGURAÇÃO DA API CENTRAL - COLOQUE O SEU URL AQUI! ⚠️
         // =========================================================================
-        const API_CENTRAL_URL = "https://script.google.com/macros/s/AKfycbwJ0PCV_t5SulONv1z6HLSKinHn0FunUtQ8BoRR6xqkKjG0MhwDSerDg0_vKdIjSOjFgw/exec"; 
+        const API_CENTRAL_URL = "COLE_SEU_LINK_AQUI"; 
         // =========================================================================
 
-        let biorreatores = {};
+        let cloudData = { sensors: {}, config: {} };
         let activeSensorId = "";
         let sessaoSenha = sessionStorage.getItem('sonda_auth') || '';
+        let refreshIntervalId = null;
 
-        // --- SISTEMA DE LOGIN ---
+        // --- SISTEMA DE ACESSO ---
         async function realizarLogin() {
             const senha = document.getElementById('input-senha').value;
             if (!senha) return;
 
             const btn = document.getElementById('btn-login');
-            btn.innerHTML = 'Validando...';
+            btn.innerHTML = '<svg class="animate-spin h-5 w-5 text-white inline-block mr-2" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Validando...';
             
-            // Tenta buscar a lista de sensores da API Central como teste de senha
             try {
                 const response = await fetch(`${API_CENTRAL_URL}?senha=${encodeURIComponent(senha)}&action=getSensors`);
-                const data = await response.json();
+                const text = await response.text();
                 
-                // Se chegou aqui sem erro, a senha está correta!
+                if(text.includes("Acesso Negado")) throw new Error("Senha incorreta");
+
                 sessaoSenha = senha;
                 sessionStorage.setItem('sonda_auth', senha);
-                biorreatores = data;
+                cloudData.sensors = JSON.parse(text);
                 
                 document.getElementById('login-overlay').classList.add('hidden');
-                document.getElementById('msg-erro-login').classList.add('hidden');
                 initApp();
             } catch (e) {
                 document.getElementById('msg-erro-login').classList.remove('hidden');
@@ -290,7 +369,10 @@
         async function realizarLoginComSessao() {
             try {
                 const response = await fetch(`${API_CENTRAL_URL}?senha=${encodeURIComponent(sessaoSenha)}&action=getSensors`);
-                biorreatores = await response.json();
+                const text = await response.text();
+                if(text.includes("Acesso Negado")) throw new Error("Sessão expirada");
+                
+                cloudData.sensors = JSON.parse(text);
                 document.getElementById('login-overlay').classList.add('hidden');
                 initApp();
             } catch (e) {
@@ -301,13 +383,15 @@
         function initApp() {
             updateSensorDropdown();
             updateFleetUI();
-            if (Object.keys(biorreatores).length > 0) {
-                activeSensorId = Object.values(biorreatores)[0];
+            updateSettingsUI();
+            if (Object.keys(cloudData.sensors).length > 0) {
+                activeSensorId = Object.values(cloudData.sensors)[0];
                 loadDashboardData();
             }
+            startAutoRefresh();
         }
 
-        // --- GESTÃO DE DADOS ---
+        // --- DASHBOARD ---
         async function loadDashboardData() {
             if (!activeSensorId) return;
             
@@ -324,7 +408,7 @@
                     complete: (res) => renderDashboard(res.data)
                 });
             } catch (e) {
-                document.getElementById('loading-text').innerHTML = "<span class='text-red-500 font-bold'>Erro ao conectar com a API Central.</span>";
+                document.getElementById('loading-text').innerHTML = "<span class='text-red-500 font-bold'>Erro na nuvem. Verifique o ID da planilha.</span>";
             }
         }
 
@@ -332,18 +416,22 @@
             if (!data || data.length === 0) return;
             const ultimo = data[data.length - 1];
             
-            document.getElementById('metrica-biomassa').innerText = (parseFloat(ultimo['Biomass']) || 0).toFixed(3);
-            
-            // Plotly logic aqui...
+            document.getElementById('metrica-biomassa').innerText = (parseFloat(ultimo['Biomass']) || 0).toFixed(4);
+            document.getElementById('metrica-temp').innerText = (parseFloat(ultimo['Temp']) || 0).toFixed(2);
+            document.getElementById('metrica-mu').innerText = (parseFloat(ultimo['Mu']) || 0).toFixed(4);
+            document.getElementById('metrica-fase').innerText = (ultimo['State'] || '--').replace(/_/g, ' ');
+
             const dates = data.map(r => r[Object.keys(r)[0]]);
             const biomass = data.map(r => parseFloat(r['Biomass']) || 0);
 
             Plotly.newPlot('grafico-cinetica', [{
-                x: dates, y: biomass, type: 'scatter', mode: 'lines+markers',
-                line: {color: '#16a34a', width: 3}, fill: 'tozeroy', fillcolor: '#16a34a10'
+                x: dates, y: biomass, type: 'scatter', mode: 'lines',
+                line: {color: '#16a34a', width: 3, shape: 'spline'}, fill: 'tozeroy', fillcolor: '#16a34a15'
             }], {
-                margin: { l: 40, r: 10, t: 10, b: 40 },
-                font: { family: 'Inter' }
+                margin: { l: 50, r: 10, t: 10, b: 40 },
+                font: { family: 'Inter' },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)'
             }, {responsive: true, displayModeBar: false});
 
             document.getElementById('loading').style.display = 'none';
@@ -357,40 +445,31 @@
             if (!nome || !id) return;
 
             const btn = document.getElementById('btn-cloud-save');
-            btn.innerHTML = 'Salvando na Nuvem...';
+            btn.innerHTML = 'Gravando...';
 
-            const novaLista = {...biorreatores};
+            const novaLista = {...cloudData.sensors};
             novaLista[nome] = id;
 
             try {
-                const url = `${API_CENTRAL_URL}?senha=${encodeURIComponent(sessaoSenha)}`;
-                await fetch(url, {
+                await fetch(`${API_CENTRAL_URL}?senha=${encodeURIComponent(sessaoSenha)}`, {
                     method: 'POST',
                     body: JSON.stringify(novaLista)
                 });
-                
-                biorreatores = novaLista;
+                cloudData.sensors = novaLista;
                 cancelEdit();
                 initApp();
             } catch (e) {
-                alert("Erro ao salvar na nuvem.");
+                alert("Erro ao salvar.");
             }
             btn.innerHTML = 'Salvar na Nuvem';
         }
 
         async function deleteSensorCloud(nome) {
-            if (!confirm(`Excluir ${nome} da nuvem?`)) return;
-            
-            const novaLista = {...biorreatores};
+            if (!confirm(`Excluir ${nome}?`)) return;
+            const novaLista = {...cloudData.sensors};
             delete novaLista[nome];
-
-            const url = `${API_CENTRAL_URL}?senha=${encodeURIComponent(sessaoSenha)}`;
-            await fetch(url, {
-                method: 'POST',
-                body: JSON.stringify(novaLista)
-            });
-            
-            biorreatores = novaLista;
+            await fetch(`${API_CENTRAL_URL}?senha=${encodeURIComponent(sessaoSenha)}`, { method: 'POST', body: JSON.stringify(novaLista) });
+            cloudData.sensors = novaLista;
             initApp();
         }
 
@@ -407,14 +486,14 @@
 
         function updateSensorDropdown() {
             const s = document.getElementById('sensor-select');
-            s.innerHTML = Object.entries(biorreatores).map(([n, id]) => `<option value="${id}">${n}</option>`).join('');
-            document.getElementById('fleet-total').innerText = `${Object.keys(biorreatores).length} Sensores`;
+            s.innerHTML = Object.entries(cloudData.sensors).map(([n, id]) => `<option value="${id}">${n}</option>`).join('');
+            document.getElementById('fleet-total').innerText = `${Object.keys(cloudData.sensors).length} Sensores`;
         }
 
         function updateFleetUI() {
             const grid = document.getElementById('fleet-grid');
-            grid.innerHTML = Object.entries(biorreatores).map(([n, id]) => `
-                <div onclick="selectSensorFromFleet('${id}')" class="p-4 border border-slate-200 bg-white rounded-2xl flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-all">
+            grid.innerHTML = Object.entries(cloudData.sensors).map(([n, id]) => `
+                <div onclick="selectSensorFromFleet('${id}')" class="p-4 border border-slate-200 bg-white rounded-2xl flex items-center justify-between cursor-pointer hover:border-usp-500 transition-all">
                     <span class="text-xs font-bold truncate">${n}</span>
                     <span class="h-2 w-2 rounded-full bg-slate-300"></span>
                 </div>
@@ -423,39 +502,71 @@
 
         function renderManageList() {
             const list = document.getElementById('manage-sensors-list');
-            list.innerHTML = Object.entries(biorreatores).map(([n, id]) => `
+            list.innerHTML = Object.entries(cloudData.sensors).map(([n, id]) => `
                 <tr class="hover:bg-slate-50">
                     <td class="px-6 py-4 font-bold text-slate-700">${n}</td>
                     <td class="px-6 py-4 text-xs font-mono text-slate-400 break-all">${id}</td>
                     <td class="px-6 py-4 text-right">
-                        <button onclick="deleteSensorCloud('${n}')" class="text-red-500 hover:text-red-700 p-2">Excluir da Nuvem</button>
+                        <button onclick="deleteSensorCloud('${n}')" class="text-red-500 hover:text-red-700 text-xs font-bold uppercase tracking-widest p-2">Excluir</button>
                     </td>
                 </tr>
             `).join('');
         }
 
-        function changeSensor() {
-            activeSensorId = document.getElementById('sensor-select').value;
-            loadDashboardData();
+        function toggleRefreshSwitch() {
+            const input = document.getElementById('config-refresh-enabled');
+            const val = input.value === 'true' ? 'false' : 'true';
+            input.value = val;
+            const dot = document.getElementById('dot-toggle-refresh');
+            const btn = document.getElementById('btn-toggle-refresh');
+            const label = document.getElementById('toggle-label');
+
+            if(val === 'true') {
+                dot.classList.add('translate-x-5');
+                btn.classList.add('bg-usp-600');
+                label.innerText = "Ligada";
+                document.getElementById('container-refresh-interval').classList.remove('hidden');
+            } else {
+                dot.classList.remove('translate-x-5');
+                btn.classList.remove('bg-usp-600');
+                label.innerText = "Desligada";
+                document.getElementById('container-refresh-interval').classList.add('hidden');
+            }
         }
 
-        function selectSensorFromFleet(id) {
-            document.getElementById('sensor-select').value = id;
-            changeSensor();
+        // Sincroniza UI com localStorage para parâmetros locais, mas pode ser expandido para nuvem
+        function updateSettingsUI() {
+            document.getElementById('config-tolerance').value = localStorage.getItem('sys_tolerance') || 120;
+            document.getElementById('config-dias-vis').value = localStorage.getItem('sys_dias_vis') || 7;
+            document.getElementById('config-dias-down').value = localStorage.getItem('sys_dias_down') || 30;
+            document.getElementById('config-refresh-interval').value = localStorage.getItem('sys_interval') || 5;
         }
 
-        function showAddForm() { 
-            document.getElementById('sensor-form-container').classList.remove('hidden'); 
-            document.getElementById('btn-show-add-form').classList.add('hidden');
+        function saveGlobalConfigOnCloud() {
+            localStorage.setItem('sys_tolerance', document.getElementById('config-tolerance').value);
+            localStorage.setItem('sys_dias_vis', document.getElementById('config-dias-vis').value);
+            localStorage.setItem('sys_dias_down', document.getElementById('config-dias-down').value);
+            localStorage.setItem('sys_interval', document.getElementById('config-refresh-interval').value);
+            localStorage.setItem('sys_refresh_enabled', document.getElementById('config-refresh-enabled').value);
+            
+            showModal({title: 'Sucesso', message: 'Parâmetros locais salvos. (Opcional: Sincronizar com a planilha central no futuro)'});
+            startAutoRefresh();
         }
 
-        function cancelEdit() { 
-            document.getElementById('sensor-form-container').classList.add('hidden'); 
-            document.getElementById('btn-show-add-form').classList.remove('hidden');
-        }
-
+        function changeSensor() { activeSensorId = document.getElementById('sensor-select').value; loadDashboardData(); }
+        function selectSensorFromFleet(id) { document.getElementById('sensor-select').value = id; changeSensor(); }
+        function showAddForm() { document.getElementById('sensor-form-container').classList.remove('hidden'); document.getElementById('btn-show-add-form').classList.add('hidden'); }
+        function cancelEdit() { document.getElementById('sensor-form-container').classList.add('hidden'); document.getElementById('btn-show-add-form').classList.remove('hidden'); }
         function manualRefresh() { loadDashboardData(); }
-        function simulateIdealData() { alert("Funcionalidade de simulação em manutenção para a nova API."); }
+        function showModal({title, message}) { document.getElementById('custom-modal-title').innerText = title; document.getElementById('custom-modal-message').innerText = message; document.getElementById('custom-modal').classList.remove('hidden'); document.getElementById('custom-modal').classList.add('flex'); setTimeout(() => document.getElementById('custom-modal').classList.remove('opacity-0'), 10); }
+        document.getElementById('custom-modal-confirm').onclick = () => document.getElementById('custom-modal').classList.add('hidden');
+
+        function startAutoRefresh() {
+            if(refreshIntervalId) clearInterval(refreshIntervalId);
+            const enabled = localStorage.getItem('sys_refresh_enabled') === 'true';
+            const interval = parseInt(localStorage.getItem('sys_interval')) || 5;
+            if(enabled) refreshIntervalId = setInterval(loadDashboardData, interval * 60000);
+        }
     </script>
 </body>
 </html>
