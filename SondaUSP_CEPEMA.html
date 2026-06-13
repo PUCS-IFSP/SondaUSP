@@ -625,18 +625,32 @@
             const now = new Date();
             for(let i = 0; i < 60; i++) {
                 const date = new Date(now.getTime() - (i * 3600000));
+                
+                // Cria simulação baseada estritamente na ordem das colunas A até S da planilha
                 const row = {
                     'Data_Hora': date.toLocaleString('pt-BR'),
-                    'Biomass': (1.2 + Math.random() * 0.3).toFixed(3),
+                    'Biomass': (1.2 + Math.random() * 0.3).toFixed(4),
                     'Mu': (0.02 + Math.random() * 0.01).toFixed(4),
                     'Temp': (26 + Math.random()).toFixed(2),
                     'State': 'Log_Phase',
-                    'Calib_Base': '121.00'
+                    'Calib_Base': '121.00',
+                    'F1': (50 + Math.random()*20).toFixed(1),
+                    'F2': (60 + Math.random()*20).toFixed(1),
+                    'FZ': (70 + Math.random()*20).toFixed(1),
+                    'F3': (80 + Math.random()*20).toFixed(1),
+                    'F4': (90 + Math.random()*20).toFixed(1),
+                    'FY': (100 + Math.random()*20).toFixed(1),
+                    'F5': (110 + Math.random()*20).toFixed(1),
+                    'FXL': (120 + Math.random()*20).toFixed(1),
+                    'F6': (130 + Math.random()*20).toFixed(1),
+                    'F7': (140 + Math.random()*20).toFixed(1),
+                    'F8': (150 + Math.random()*20).toFixed(1),
+                    'FNI': (160 + Math.random()*20).toFixed(1),
+                    'CLR': (500 + Math.random()*50).toFixed(1)
                 };
-                Object.keys(DADOS_CANAIS).forEach(ch => row[ch] = (Math.random() * 200).toFixed(1));
                 mockRows.push(row);
             }
-            window.headersGlobal = ['Data_Hora', 'Biomass', 'Mu', 'Temp', 'State', 'Calib_Base', ...Object.keys(DADOS_CANAIS)];
+            window.headersGlobal = ['Data_Hora', 'Biomass', 'Mu', 'Temp', 'State', 'Calib_Base', 'F1', 'F2', 'FZ', 'F3', 'F4', 'FY', 'F5', 'FXL', 'F6', 'F7', 'F8', 'FNI', 'CLR'];
             processData(mockRows.reverse());
             switchView('dashboard');
         }
@@ -742,7 +756,6 @@
                                     let parsed = parseDate(last[firstKey]);
                                     if(parsed) {
                                         let time = new Date(parsed.replace(/-/g, '/')).getTime();
-                                        // PROTEÇÃO CONTRA VALORES NAN TRAVADOS
                                         if(!isNaN(time) && (new Date().getTime() - time) < toleranceMinutes * 60000) {
                                             isOnline = true;
                                         }
@@ -764,13 +777,13 @@
 
         function processData(rawData) {
             if (!rawData || rawData.length === 0) return;
-            let keyDate = window.headersGlobal[0]; 
             window.currentRawData = rawData;
             let now = new Date().getTime();
             let limitMs = diasVis * 24 * 60 * 60 * 1000;
             
             let filtered = rawData.filter(row => {
-                let parsed = parseDate(row[keyDate]);
+                let chaves = Object.keys(row);
+                let parsed = parseDate(row[chaves[0]]); // Primeira coluna é sempre a Data_Hora
                 if(!parsed) return false;
                 let rowTime = new Date(parsed.replace(/-/g, '/')).getTime();
                 return !isNaN(rowTime) && (now - rowTime) <= limitMs;
@@ -781,16 +794,29 @@
             Object.keys(DADOS_CANAIS).forEach(ch => processed.spectral[ch] = []);
 
             filtered.forEach(row => {
-                let clean = {}; for (let k in row) clean[k.trim()] = row[k];
-                let parsed = parseDate(clean[keyDate.trim()]);
-                if(parsed) {
-                    processed.dates.push(parsed);
-                    // SUPORTE FLEXÍVEL A LETRAS MAIÚSCULAS OU MINÚSCULAS NAS CHAVES
-                    processed.biomass.push(parseFloat(clean['Biomass'] || clean['biomass']) || 0);
-                    processed.mu.push(parseFloat(clean['Mu'] || clean['mu']) || 0);
-                    Object.keys(DADOS_CANAIS).forEach(ch => {
-                        processed.spectral[ch].push(parseFloat(clean[ch] || clean[ch.toLowerCase()]) || 0);
-                    });
+                // Converte cada linha num array estrito de valores indexados
+                let valoresLinha = Object.values(row).map(v => v ? v.toString().trim() : "");
+                let parsedDate = parseDate(valoresLinha[0]); // Coluna A = Data_Hora
+                
+                if(parsedDate) {
+                    processed.dates.push(parsedDate);
+                    processed.biomass.push(parseFloat(valoresLinha[1]) || 0); // Coluna B = Biomass
+                    processed.mu.push(parseFloat(valoresLinha[2]) || 0);      // Coluna C = Mu
+                    
+                    // Mapeamento Espectral baseado nos índices exatos de colunas fornecidos (Coluna G até Coluna S)
+                    processed.spectral['F1'].push(parseFloat(valoresLinha[6]) || 0);  // Coluna G = F1
+                    processed.spectral['F2'].push(parseFloat(valoresLinha[7]) || 0);  // Coluna H = F2
+                    processed.spectral['FZ'].push(parseFloat(valoresLinha[8]) || 0);  // Coluna I = FZ
+                    processed.spectral['F3'].push(parseFloat(valoresLinha[9]) || 0);  // Coluna J = F3
+                    processed.spectral['F4'].push(parseFloat(valoresLinha[10]) || 0); // Coluna K = F4
+                    processed.spectral['FY'].push(parseFloat(valoresLinha[11]) || 0); // Coluna L = FY
+                    processed.spectral['F5'].push(parseFloat(valoresLinha[12]) || 0); // Coluna M = F5
+                    processed.spectral['FXL'].push(parseFloat(valoresLinha[13]) || 0);// Coluna N = FXL
+                    processed.spectral['F6'].push(parseFloat(valoresLinha[14]) || 0); // Coluna O = F6
+                    processed.spectral['F7'].push(parseFloat(valoresLinha[15]) || 0); // Coluna P = F7
+                    processed.spectral['F8'].push(parseFloat(valoresLinha[16]) || 0); // Coluna Q = F8
+                    processed.spectral['FNI'].push(parseFloat(valoresLinha[17]) || 0);// Coluna R = FNI
+                    processed.spectral['CLR'].push(parseFloat(valoresLinha[18]) || 0);// Coluna S = CLR
                 }
             });
             currentSpectralData = processed;
@@ -802,13 +828,14 @@
             const processed = currentSpectralData;
             
             let ultimoReal = filteredRows[filteredRows.length - 1];
+            let valoresUltimo = Object.values(ultimoReal).map(v => v ? v.toString().trim() : "");
 
-            // LEITURA MULTI-CASE (Biomass vs biomass) PARA EVITAR CAIXAS VAZIAS NO PAINEL
-            let valBiomass = ultimoReal['Biomass'] || ultimoReal['biomass'] || 0;
-            let valMu = ultimoReal['Mu'] || ultimoReal['mu'] || 0;
-            let valTemp = ultimoReal['Temp'] || ultimoReal['temp'] || 25.0;
-            let valCalib = ultimoReal['Calib_Base'] || ultimoReal['calib_base'] || 0;
-            let estadoBruto = (ultimoReal['State'] || ultimoReal['state'] || 'N/A').toString().trim();
+            // ALIMENTAÇÃO TOTALMENTE ALINHADA COM AS COLUNAS DA PLANILHA (A até S)
+            let valBiomass = valoresUltimo[1] || 0; // Coluna B = Biomass
+            let valMu      = valoresUltimo[2] || 0; // Coluna C = Mu
+            let valTemp    = valoresUltimo[3] || 0; // Coluna D = Temp
+            let estadoBruto = valoresUltimo[4] || "N/A"; // Coluna E = State
+            let valCalib   = valoresUltimo[5] || 0; // Coluna F = Calib_Base
 
             document.getElementById('metrica-biomassa').innerText = (parseFloat(valBiomass) || 0).toFixed(4);
             document.getElementById('metrica-mu').innerText = (parseFloat(valMu) || 0).toFixed(4);
@@ -842,9 +869,14 @@
 
             renderSpectralChart();
 
-            document.getElementById('grid-canais').innerHTML = Object.keys(DADOS_CANAIS).map(ch => {
+            // RENDERIZAÇÃO DOS MINI GRAFICOS DE SENSORES FOTÔNICOS
+            const ordemColunasCanais = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18];
+            const chKeys = Object.keys(DADOS_CANAIS);
+            
+            document.getElementById('grid-canais').innerHTML = chKeys.map((ch, idx) => {
                 let inf = DADOS_CANAIS[ch];
-                let rawVal = ultimoReal[ch] || ultimoReal[ch.toLowerCase()] || 0;
+                let colIdx = ordemColunasCanais[idx];
+                let rawVal = valoresUltimo[colIdx] || 0;
                 let val = Math.round(parseFloat(rawVal) || 0);
                 return `<div style="background-color: ${inf.cor}10; border-bottom: 3px solid ${inf.cor}" class="p-3 rounded-2xl text-center">
                     <span class="text-slate-500 text-[9px] font-bold uppercase">${inf.onda}</span><br>
@@ -1006,7 +1038,7 @@
                      showModal({ title: 'Erro', message: 'Erro ao gravar na nuvem.', type: 'alert' });
                 } else {
                     initSensorsDropdown(); renderManageList(); cancelEdit();
-                    showModal({ title: 'Sucesso', message: 'Biorreator atualizado com sucesso!', type: 'alert' });
+                    showModal({ title: 'Sucesso', message: 'Biorreator updated com sucesso!', type: 'alert' });
                     if(Object.keys(biorreatores).length === 1) activeSensorId = id;
                 }
             } catch (e) {
@@ -1051,6 +1083,12 @@
         function changeSensor() {
             const select = document.getElementById('sensor-select');
             if(select) { activeSensorId = select.value; loadDashboardData(); }
+        }
+
+        function selectSensorFromFleet(id) {
+            activeSensorId = id;
+            initSensorsDropdown();
+            loadDashboardData();
         }
 
         function manualRefresh() {
