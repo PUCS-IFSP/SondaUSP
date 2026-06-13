@@ -8,7 +8,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2=family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <script>
         tailwind.config = {
@@ -178,31 +178,38 @@
             </div>
 
             <div id="dashboard-content" class="hidden">
-                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden">
+                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden">
                         <h4 class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Biomassa Estimada</h4>
-                        <div class="flex items-baseline gap-2">
-                            <p id="metrica-biomassa" class="text-3xl font-extrabold text-slate-900">--</p>
-                            <span class="text-slate-500 font-medium">g/L</span>
+                        <div class="flex items-baseline gap-1">
+                            <p id="metrica-biomassa" class="text-2xl font-extrabold text-slate-900">--</p>
+                            <span class="text-slate-500 text-xs font-medium">g/L</span>
                         </div>
                     </div>
-                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                        <h4 class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Temperatura</h4>
-                        <div class="flex items-baseline gap-2">
-                            <p id="metrica-temp" class="text-3xl font-extrabold text-slate-900">--</p>
-                            <span class="text-slate-500 font-medium">°C</span>
-                        </div>
-                    </div>
-                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
                         <h4 class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Crescimento (μ)</h4>
-                        <div class="flex items-baseline gap-2">
-                            <p id="metrica-mu" class="text-3xl font-extrabold text-slate-900">--</p>
-                            <span class="text-slate-500 font-medium">h⁻¹</span>
+                        <div class="flex items-baseline gap-1">
+                            <p id="metrica-mu" class="text-2xl font-extrabold text-slate-900">--</p>
+                            <span class="text-slate-500 text-xs font-medium">h⁻¹</span>
                         </div>
                     </div>
-                    <div class="p-6 rounded-2xl border text-left shadow-sm flex flex-col justify-between bg-white" id="card-fase">
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                        <h4 class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Temperatura</h4>
+                        <div class="flex items-baseline gap-1">
+                            <p id="metrica-temp" class="text-2xl font-extrabold text-slate-900">--</p>
+                            <span class="text-slate-500 text-xs font-medium">°C</span>
+                        </div>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                        <h4 class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Linha de Base</h4>
+                        <div class="flex items-baseline gap-1">
+                            <p id="metrica-calib" class="text-2xl font-extrabold text-slate-900">--</p>
+                            <span class="text-slate-500 text-xs font-medium">U.A.</span>
+                        </div>
+                    </div>
+                    <div class="p-5 rounded-2xl border text-left shadow-sm flex flex-col justify-between bg-white" id="card-fase">
                         <h4 class="text-slate-700 text-xs font-bold uppercase tracking-wider mb-2 opacity-80">Estado Atual</h4>
-                        <p id="metrica-fase" class="text-2xl font-black text-slate-800 capitalize">--</p>
+                        <p id="metrica-fase" class="text-xl font-black text-slate-800 capitalize truncate">--</p>
                     </div>
                 </div>
 
@@ -390,7 +397,7 @@
         let dashboardLoaded = false;
         let currentSpectralData = null;
 
-        // MAPEAMENTO DA ASSINATURA ESPECTRAL DO AS7343 EM MAIÚSCULAS (13 CANAIS DE TRANSMISSÃO)
+        // MAPEAMENTO DA ASSINATURA ESPECTRAL DO AS7343 EM MAIÚSCULAS
         const DADOS_CANAIS = {
             'F1': {onda: '405nm', peak: 405, sigma: 10, cor: '#4f46e5', dash: 'solid'},
             'F2': {onda: '425nm', peak: 425, sigma: 10, cor: '#4338ca', dash: 'solid'},
@@ -624,12 +631,13 @@
                     'Biomass': (1.2 + Math.random() * 0.3).toFixed(3),
                     'Mu': (0.02 + Math.random() * 0.01).toFixed(4),
                     'Temp': (26 + Math.random()).toFixed(2),
-                    'State': 'Log_Phase'
+                    'State': 'Log_Phase',
+                    'Calib_Base': '121.00'
                 };
                 Object.keys(DADOS_CANAIS).forEach(ch => row[ch] = (Math.random() * 200).toFixed(1));
                 mockRows.push(row);
             }
-            window.headersGlobal = ['Data_Hora', 'Biomass', 'Mu', 'Temp', 'State', ...Object.keys(DADOS_CANAIS)];
+            window.headersGlobal = ['Data_Hora', 'Biomass', 'Mu', 'Temp', 'State', 'Calib_Base', ...Object.keys(DADOS_CANAIS)];
             processData(mockRows.reverse());
             switchView('dashboard');
         }
@@ -687,6 +695,7 @@
                             let dadosLimpos = res.data.map(row => {
                                 let novoObj = {};
                                 for (let key in row) {
+                                    // Remove espaços e sincroniza chaves perfeitamente
                                     novoObj[key.trim()] = row[key] ? row[key].toString().trim() : "";
                                 }
                                 return novoObj;
@@ -784,13 +793,15 @@
             renderDashboard(filtered);
         }
 
+        // CORREÇÃO DOS ACESSOS DA PLANILHA (CASE-SENSITIVE: Biomass, Mu, Temp, State, Calib_Base)
         function renderDashboard(filteredRows) {
             const processed = currentSpectralData;
             let ultimo = filteredRows[filteredRows.length - 1];
 
             document.getElementById('metrica-biomassa').innerText = (parseFloat(ultimo['Biomass']) || 0).toFixed(4);
-            document.getElementById('metrica-temp').innerText = (parseFloat(ultimo['Temp']) || 0).toFixed(2);
             document.getElementById('metrica-mu').innerText = (parseFloat(ultimo['Mu']) || 0).toFixed(4);
+            document.getElementById('metrica-temp').innerText = (parseFloat(ultimo['Temp']) || 0).toFixed(2);
+            document.getElementById('metrica-calib').innerText = (parseFloat(ultimo['Calib_Base']) || 0).toFixed(2);
             
             let estadoBruto = (ultimo['State'] || 'N/A').toString().trim();
             let fase = estadoBruto.toLowerCase();
