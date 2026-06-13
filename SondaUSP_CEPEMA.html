@@ -55,7 +55,7 @@
                 </div>
                 <h1 class="text-2xl font-bold text-slate-800 tracking-tight">Acesso Protegido</h1>
             </div>
-            <p class="text-slate-500 text-center mb-8 text-sm">Insira a palavra-passe para aceder aos dados do sistema SondaUSP.</p>
+            <p class="text-slate-500 text-center mb-8 text-sm">Insira a palavra-passe para aceder aos dados do system SondaUSP.</p>
             
             <div class="mb-5">
                 <input type="password" id="input-senha" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 focus:outline-none focus:ring-2 focus:ring-usp-500 focus:border-usp-500 transition-all" placeholder="Palavra-passe" onkeypress="if(event.key === 'Enter') realizarLogin()">
@@ -397,7 +397,6 @@
         let dashboardLoaded = false;
         let currentSpectralData = null;
 
-        // MAPEAMENTO DA ASSINATURA ESPECTRAL DO AS7343 EM MAIÚSCULAS
         const DADOS_CANAIS = {
             'F1': {onda: '405nm', peak: 405, sigma: 10, cor: '#4f46e5', dash: 'solid'},
             'F2': {onda: '425nm', peak: 425, sigma: 10, cor: '#4338ca', dash: 'solid'},
@@ -603,7 +602,7 @@
                      showModal({ title: 'Erro', message: 'Houve um erro ao gravar na nuvem.', type: 'alert' });
                 } else {
                     loadDashboardData(); startAutoRefresh();
-                    showModal({ title: 'Sucesso', message: 'Parâmetros globais updated com sucesso.', type: 'alert' });
+                    showModal({ title: 'Sucesso', message: 'Parâmetros globais atualizados com sucesso.', type: 'alert' });
                 }
             } catch (e) {
                 showModal({ title: 'Falha', message: 'Sem conexão com a nuvem.', type: 'alert' });
@@ -737,13 +736,16 @@
                         Papa.parse(csvText, {
                             header: true, skipEmptyLines: true,
                             complete: function(res) {
-                                if(res.data.length > 0) {
+                                if(res.data && res.data.length > 0) {
                                     let last = res.data[res.data.length-1];
                                     let firstKey = Object.keys(last)[0];
                                     let parsed = parseDate(last[firstKey]);
                                     if(parsed) {
                                         let time = new Date(parsed.replace(/-/g, '/')).getTime();
-                                        if((new Date().getTime() - time) < toleranceMinutes * 60000) isOnline = true;
+                                        // PROTEÇÃO CONTRA VALORES NAN TRAVADOS
+                                        if(!isNaN(time) && (new Date().getTime() - time) < toleranceMinutes * 60000) {
+                                            isOnline = true;
+                                        }
                                     }
                                 }
                                 isOnline ? online++ : offline++;
@@ -783,9 +785,12 @@
                 let parsed = parseDate(clean[keyDate.trim()]);
                 if(parsed) {
                     processed.dates.push(parsed);
-                    processed.biomass.push(parseFloat(clean['Biomass']) || 0);
-                    processed.mu.push(parseFloat(clean['Mu']) || 0);
-                    Object.keys(DADOS_CANAIS).forEach(ch => processed.spectral[ch].push(parseFloat(clean[ch]) || 0));
+                    // SUPORTE FLEXÍVEL A LETRAS MAIÚSCULAS OU MINÚSCULAS NAS CHAVES
+                    processed.biomass.push(parseFloat(clean['Biomass'] || clean['biomass']) || 0);
+                    processed.mu.push(parseFloat(clean['Mu'] || clean['mu']) || 0);
+                    Object.keys(DADOS_CANAIS).forEach(ch => {
+                        processed.spectral[ch].push(parseFloat(clean[ch] || clean[ch.toLowerCase()]) || 0);
+                    });
                 }
             });
             currentSpectralData = processed;
@@ -796,16 +801,20 @@
             if (!filteredRows || filteredRows.length === 0) return;
             const processed = currentSpectralData;
             
-            // 1. CAPTURA O ÚLTIMO DADO REAL RECENTE DIRETAMENTE ANTES DE QUALQUER INVERSÃO
             let ultimoReal = filteredRows[filteredRows.length - 1];
 
-            // 2. ATUALIZA OS 5 CARTÕES COM GARANTIA DE CHAVE EXATA (CASE-SENSITIVE)
-            document.getElementById('metrica-biomassa').innerText = (parseFloat(ultimoReal['Biomass']) || 0).toFixed(4);
-            document.getElementById('metrica-mu').innerText = (parseFloat(ultimoReal['Mu']) || 0).toFixed(4);
-            document.getElementById('metrica-temp').innerText = (parseFloat(ultimoReal['Temp']) || 0).toFixed(2);
-            document.getElementById('metrica-calib').innerText = (parseFloat(ultimoReal['Calib_Base']) || 0).toFixed(2);
+            // LEITURA MULTI-CASE (Biomass vs biomass) PARA EVITAR CAIXAS VAZIAS NO PAINEL
+            let valBiomass = ultimoReal['Biomass'] || ultimoReal['biomass'] || 0;
+            let valMu = ultimoReal['Mu'] || ultimoReal['mu'] || 0;
+            let valTemp = ultimoReal['Temp'] || ultimoReal['temp'] || 25.0;
+            let valCalib = ultimoReal['Calib_Base'] || ultimoReal['calib_base'] || 0;
+            let estadoBruto = (ultimoReal['State'] || ultimoReal['state'] || 'N/A').toString().trim();
+
+            document.getElementById('metrica-biomassa').innerText = (parseFloat(valBiomass) || 0).toFixed(4);
+            document.getElementById('metrica-mu').innerText = (parseFloat(valMu) || 0).toFixed(4);
+            document.getElementById('metrica-temp').innerText = (parseFloat(valTemp) || 0).toFixed(2);
+            document.getElementById('metrica-calib').innerText = (parseFloat(valCalib) || 0).toFixed(2);
             
-            let estadoBruto = (ultimoReal['State'] || 'N/A').toString().trim();
             let fase = estadoBruto.toLowerCase();
             let cfg = CORES_FASES['n/a'];
             if (fase.includes('lag')) cfg = CORES_FASES['lag_phase'];
@@ -835,7 +844,8 @@
 
             document.getElementById('grid-canais').innerHTML = Object.keys(DADOS_CANAIS).map(ch => {
                 let inf = DADOS_CANAIS[ch];
-                let val = Math.round(parseFloat(ultimoReal[ch]) || 0);
+                let rawVal = ultimoReal[ch] || ultimoReal[ch.toLowerCase()] || 0;
+                let val = Math.round(parseFloat(rawVal) || 0);
                 return `<div style="background-color: ${inf.cor}10; border-bottom: 3px solid ${inf.cor}" class="p-3 rounded-2xl text-center">
                     <span class="text-slate-500 text-[9px] font-bold uppercase">${inf.onda}</span><br>
                     <span style="color: ${inf.cor}" class="text-lg font-black">${val}</span></div>`;
@@ -844,7 +854,6 @@
             const cols = window.headersGlobal;
             document.getElementById('tabela-head').innerHTML = cols.map(c => `<th class="px-5 py-4 whitespace-nowrap">${c}</th>`).join('');
             
-            // 3. AGORA SIM, INVERTE EXCLUSIVAMENTE PARA EXIBIR NA TABELA DE REGISTROS RECENTES
             let rowsParaTabela = [...filteredRows].reverse();
             document.getElementById('tabela-body').innerHTML = rowsParaTabela.slice(0, 30).map(row => 
                 `<tr class="hover:bg-slate-50 transition-colors">${cols.map(c => `<td class="px-5 py-3 font-medium text-xs">${row[c]||''}</td>`).join('')}</tr>`
@@ -1021,4 +1030,61 @@
                         const resultadoText = await resposta.text();
                         if(resultadoText.includes("Sucesso")) { renderManageList(); initSensorsDropdown(); }
                         else { biorreatores = backupBiorreatores; showModal({ title: 'Erro', message: 'Erro ao excluir.', type: 'alert' }); }
-                    } catch (e) { biorreat
+                    } catch (e) { biorreatores = backupBiorreatores; showModal({ title: 'Erro', message: 'Sem conexão.', type: 'alert' }); }
+                }
+            });
+        }
+
+        function initSensorsDropdown() {
+            const select = document.getElementById('sensor-select');
+            if(!select) return;
+            const entries = Object.entries(biorreatores);
+            if(entries.length === 0) {
+                select.innerHTML = "<option>Nenhum Biorreator Cadastrado</option>";
+                activeSensorId = null;
+                return;
+            }
+            select.innerHTML = entries.map(([nome, id]) => `<option value="${id}" ${id===activeSensorId?'selected':''}>${nome}</option>`).join('');
+            if(!activeSensorId || !Object.values(biorreatores).includes(activeSensorId)) activeSensorId = entries[0][1];
+        }
+
+        function changeSensor() {
+            const select = document.getElementById('sensor-select');
+            if(select) { activeSensorId = select.value; loadDashboardData(); }
+        }
+
+        function manualRefresh() {
+            const icon = document.getElementById('icon-refresh');
+            if(icon) icon.classList.add('animate-spin');
+            loadDashboardData().then(() => {
+                updateFleetStatus();
+                setTimeout(() => { if(icon) icon.classList.remove('animate-spin'); }, 600);
+            });
+        }
+
+        function startAutoRefresh() {
+            if(refreshIntervalId) clearInterval(refreshIntervalId);
+            if(autoRefreshEnabled && autoRefreshInterval > 0) {
+                refreshIntervalId = setInterval(() => {
+                    if(document.getElementById('view-dashboard').classList.contains('hidden') === false) {
+                        loadDashboardData();
+                        updateFleetStatus();
+                    }
+                }, autoRefreshInterval * 60000);
+            }
+        }
+
+        window.onload = async () => {
+            if (sessaoSenha) {
+                const sucesso = await syncDaNuvem();
+                if (sucesso) {
+                    document.getElementById('login-overlay').classList.add('hidden');
+                    await loadDashboardData();
+                    updateFleetStatus();
+                    startAutoRefresh();
+                } else { logout(); }
+            }
+        };
+    </script>
+</body>
+</html>
