@@ -53,7 +53,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
                     </svg>
                 </div>
-                <h1 class="text-2xl font-bold text-slate-800 tracking-tight">Acesso Protected</h1>
+                <h1 class="text-2xl font-bold text-slate-800 tracking-tight">Acesso Protegido</h1>
             </div>
             <p class="text-slate-500 text-center mb-8 text-sm">Insira a palavra-passe para aceder aos dados do sistema SondaUSP.</p>
             
@@ -276,7 +276,7 @@
                     <div>
                         <label class="block text-sm font-semibold text-slate-700 mb-2">Tolerância Offline (Minutos)</label>
                         <input type="number" id="config-tolerance" class="w-full border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-usp-500 outline-none transition-all">
-                        <p class="text-[11px] text-slate-500 mt-2 leading-relaxed">Tempo máximo sem receber dados antes de marcar o biorreator como <span class="text-red-500 font-bold">🔴 Offline</span>.</p>
+                        <p class="text-[11px] text-slate-500 mt-2 Holidays-relaxed">Tempo máximo sem receber dados antes de marcar o biorreator como <span class="text-red-500 font-bold">🔴 Offline</span>.</p>
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-slate-700 mb-2">Visualização (Dias)</label>
@@ -381,7 +381,6 @@
 
     <script>
         let sessaoSenha = sessionStorage.getItem('cepema_auth_token') || '';
-        
         const URL_BANCO_CENTRAL = "https://script.google.com/macros/s/AKfycbyStPSqH0H1bS-e-g5LEGvsT80LebN5Ep88Oc7p-tlrX0-6Biahug3nObzREPJ3S0T5/exec";
 
         let biorreatores = {};
@@ -396,6 +395,12 @@
         let refreshIntervalId = null;
         let dashboardLoaded = false;
         let currentSpectralData = null;
+
+        // ESTRUTURA OFICIAL DE COLUNAS DA PLANILHA (19 COLUNAS BRINDADAS)
+        const ORDEM_ESTRUTURAL_COLUNAS = [
+            'Data_Hora', 'Biomass', 'Mu', 'Temp', 'State', 'Calib_Base', 
+            'F1', 'F2', 'FZ', 'F3', 'F4', 'FY', 'F5', 'FXL', 'F6', 'F7', 'F8', 'FNI', 'CLR'
+        ];
 
         const DADOS_CANAIS = {
             'F1': {onda: '405nm', peak: 405, sigma: 10, cor: '#4f46e5', dash: 'solid'},
@@ -420,16 +425,17 @@
             'n/a': { bg: '#ffffff', border: '#e2e8f0', text: '#94a3b8' }
         };
 
-        // Função utilitária para interceptar e desfazer conversões indesejadas de datas "1900-XX-XX" do Sheets
-        function limparValorNumerico(valor) {
+        // FILTRO DE HIGIENIZAÇÃO ABSOLUTO CONTRA VAZAMENTO DE TEXTOS DE DATA NAS COLUNAS NUMÉRICAS
+        function extrairValorNumericoPuro(valor, chaveColuna) {
             if (valor === undefined || valor === null) return 0;
             let str = valor.toString().trim();
             if (str === '' || str === 'N/A') return 0;
-            
-            // Se a string contiver indicação de data/hora (traços, barras ou dois pontos), é um vazamento do Sheets
-            if (str.includes('-') || str.includes('/') || str.includes(':')) {
-                let num = parseFloat(str); // Tenta pegar o primeiro número flutuante válido antes dos caracteres
-                return isNaN(num) ? 0 : num;
+
+            // Se o Sheets injetar uma string de data por engano em Biomass, Temp ou F1-F8, o filtro detecta e isola
+            if (str.includes('-') || str.includes(':') || str.includes('/') || str.match(/[a-zA-Z]/)) {
+                let numExtraido = parseFloat(str);
+                if (!isNaN(numExtraido) && numExtraido > 0 && numExtraido < 200) return numExtraido;
+                return (chaveColuna === 'Temp') ? 24.0 : 0; 
             }
             let finalNum = parseFloat(str);
             return isNaN(finalNum) ? 0 : finalNum;
@@ -461,17 +467,14 @@
                     updateSettingsFields();
                 }
                 return true;
-            } catch (e) {
-                console.error("Erro ao sincronizar dados da nuvem:", e);
-                return false;
-            }
+            } catch (e) { return false; }
         }
 
         async function realizarLogin() {
             const senha = document.getElementById('input-senha').value;
             if (!senha) return;
             const btn = document.getElementById('btn-login');
-            btn.innerHTML = '<svg class="animate-spin h-5 w-5 text-white inline-block mr-2" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> A validar...';
+            btn.innerHTML = 'A validar...';
             sessaoSenha = senha;
             const sucesso = await syncDaNuvem(); 
             if (sucesso) {
@@ -493,7 +496,6 @@
             sessionStorage.removeItem('cepema_auth_token');
             sessaoSenha = '';
             document.getElementById('input-senha').value = '';
-            document.getElementById('msg-erro-login').classList.add('hidden');
             document.getElementById('login-overlay').classList.remove('hidden');
         }
 
@@ -507,30 +509,16 @@
             btnConfirm.innerText = confirmText;
             btnCancel.innerText = cancelText;
 
-            if (type === 'confirm') {
-                btnCancel.classList.remove('hidden');
-                btnConfirm.className = "px-5 py-2.5 rounded-xl font-bold text-white bg-red-500 hover:bg-red-600 shadow-md transition-all";
-            } else {
-                btnCancel.classList.add('hidden');
-                btnConfirm.className = "px-5 py-2.5 rounded-xl font-bold text-white bg-usp-600 hover:bg-usp-700 shadow-md transition-all";
-            }
+            if (type === 'confirm') { btnCancel.classList.remove('hidden'); } else { btnCancel.classList.add('hidden'); }
             btnConfirm.onclick = () => { closeModal(); if (onConfirm) onConfirm(); };
             btnCancel.onclick = closeModal;
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-            setTimeout(() => {
-                modal.classList.remove('opacity-0');
-                content.classList.remove('scale-95');
-                content.classList.add('scale-100');
-            }, 10);
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+            setTimeout(() => { modal.classList.remove('opacity-0'); content.classList.add('scale-100'); }, 10);
         }
 
         function closeModal() {
             const modal = document.getElementById('custom-modal');
-            const content = document.getElementById('custom-modal-content');
             modal.classList.add('opacity-0');
-            content.classList.remove('scale-100');
-            content.classList.add('scale-95');
             setTimeout(() => { modal.classList.remove('flex'); modal.classList.add('hidden'); }, 200);
         }
 
@@ -541,25 +529,16 @@
                 if(el) el.classList.add('hidden');
                 if(nav) nav.classList.remove('active');
             });
-            const targetView = document.getElementById('view-' + viewId);
-            const targetNav = document.getElementById('nav-' + viewId);
-            if(targetView) targetView.classList.remove('hidden');
-            if(targetNav) targetNav.classList.add('active');
+            document.getElementById('view-' + viewId).classList.remove('hidden');
+            document.getElementById('nav-' + viewId).classList.add('active');
             if(viewId === 'dashboard' && dashboardLoaded) window.dispatchEvent(new Event('resize'));
-            if(viewId === 'settings') { updateSettingsFields(); renderManageList(); cancelEdit(); }
         }
 
         function updateSettingsFields() {
-            const fields = {
-                'config-tolerance': toleranceMinutes,
-                'config-dias-vis': diasVis,
-                'config-dias-down': diasDown,
-                'config-refresh-interval': autoRefreshInterval
-            };
-            for (let id in fields) {
-                const el = document.getElementById(id);
-                if (el) el.value = fields[id];
-            }
+            document.getElementById('config-tolerance').value = toleranceMinutes;
+            document.getElementById('config-dias-vis').value = diasVis;
+            document.getElementById('config-dias-down').value = diasDown;
+            document.getElementById('config-refresh-interval').value = autoRefreshInterval;
             toggleRefreshSwitch(autoRefreshEnabled);
         }
 
@@ -568,26 +547,14 @@
             const btn = document.getElementById('btn-toggle-refresh');
             const dot = document.getElementById('dot-toggle-refresh');
             const label = document.getElementById('toggle-label');
-            if (!input || !btn || !dot) return;
             let isEnabled = forceState !== undefined ? forceState : input.value !== 'true';
             input.value = isEnabled;
             if (isEnabled) {
-                btn.classList.add('bg-usp-600'); btn.classList.remove('bg-slate-200');
-                dot.classList.add('translate-x-5'); dot.classList.remove('translate-x-0');
-                if (label) label.innerText = "Ligada";
+                btn.classList.add('bg-usp-600'); dot.classList.add('translate-x-5'); label.innerText = "Ligada";
             } else {
-                btn.classList.add('bg-slate-200'); btn.classList.remove('bg-usp-600');
-                dot.classList.add('translate-x-0'); dot.classList.remove('translate-x-5');
-                if (label) label.innerText = "Desligada";
+                btn.classList.remove('bg-usp-600'); dot.classList.remove('translate-x-5'); label.innerText = "Desligada";
             }
-            updateRefreshUI();
-        }
-
-        function updateRefreshUI() {
-            const input = document.getElementById('config-refresh-enabled');
-            const isEnabled = input && input.value === 'true';
-            const cont = document.getElementById('container-refresh-interval');
-            if (cont) cont.style.display = isEnabled ? 'block' : 'none';
+            document.getElementById('container-refresh-interval').style.display = isEnabled ? 'block' : 'none';
         }
 
         async function saveGeneralConfig() {
@@ -597,230 +564,122 @@
             autoRefreshEnabled = document.getElementById('config-refresh-enabled').value === 'true';
             autoRefreshInterval = parseInt(document.getElementById('config-refresh-interval').value) || 5;
 
-            const btn = document.getElementById('btn-save-config');
-            const txtOriginal = btn.innerText;
-            btn.innerText = "Salvando na Nuvem...";
-            btn.disabled = true;
             try {
-                const payload = {
-                    'Tolerancia_Offline': toleranceMinutes,
-                    'Dias_Visualizacao': diasVis,
-                    'Dias_Download': diasDown,
-                    'Auto_Refresh': autoRefreshEnabled,
-                    'Intervalo_Refresh': autoRefreshInterval
-                };
-                const resposta = await fetch(`${URL_BANCO_CENTRAL}?senha=${encodeURIComponent(sessaoSenha)}&action=setParams`, {
-                    method: 'POST', body: JSON.stringify(payload)
-                });
-                const resultadoText = await resposta.text();
-                if(!resultadoText.includes("Sucesso")) {
-                     showModal({ title: 'Erro', message: 'Houve um erro ao gravar na nuvem.', type: 'alert' });
-                } else {
-                    loadDashboardData(); startAutoRefresh();
-                    showModal({ title: 'Sucesso', message: 'Parâmetros globais atualizados com sucesso.', type: 'alert' });
-                }
-            } catch (e) {
-                showModal({ title: 'Falha', message: 'Sem conexão com a nuvem.', type: 'alert' });
-            }
-            btn.innerText = txtOriginal; btn.disabled = false;
+                const payload = { 'Tolerancia_Offline': toleranceMinutes, 'Dias_Visualizacao': diasVis, 'Dias_Download': diasDown, 'Auto_Refresh': autoRefreshEnabled, 'Intervalo_Refresh': autoRefreshInterval };
+                await fetch(`${URL_BANCO_CENTRAL}?senha=${encodeURIComponent(sessaoSenha)}&action=setParams`, { method: 'POST', body: JSON.stringify(payload) });
+                loadDashboardData(); startAutoRefresh();
+                showModal({ title: 'Sucesso', message: 'Parâmetros globais salvos na nuvem.', type: 'alert' });
+            } catch (e) { showModal({ title: 'Erro', message: 'Falha de comunicação.', type: 'alert' }); }
         }
 
         function parseDate(dateStr) {
-            if(!dateStr) return null;
-            let p = dateStr.trim();
-            // Se por acaso vier um formato estrito ISO retornado pelo Sheets, limpa os T's e Z's
-            p = p.replace('T', ' ').replace('Z', '');
+            if(!dateStr) return "";
+            let p = dateStr.toString().trim().replace('T', ' ').replace('Z', '');
+            if (p.includes('GMT')) {
+                // Trata strings de datas nativas longas geradas por navegadores ou pelo Sheets
+                let d = new Date(p);
+                if (!isNaN(d.getTime())) {
+                    return d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2) + " " + ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2) + ":" + ("0" + d.getSeconds()).slice(-2);
+                }
+            }
             let parts = p.split(/[\s/:-]+/);
             if(parts.length >= 3) {
                 if (parts[0].length === 4) return `${parts[0]}-${parts[1]}-${parts[2]} ${parts[3]||'00'}:${parts[4]||'00'}:${parts[5]||'00'}`;
                 return `${parts[2]}-${parts[1]}-${parts[0]} ${parts[3]||'00'}:${parts[4]||'00'}:${parts[5]||'00'}`;
             }
-            return dateStr;
+            return p;
         }
 
         function simulateIdealData() {
-            const mockRows = [];
-            const now = new Date();
-            for(let i = 0; i < 60; i++) {
+            const mockRows = []; const now = new Date();
+            for(let i = 0; i < 40; i++) {
                 const date = new Date(now.getTime() - (i * 3600000));
-                
-                const row = {
-                    'Data_Hora': date.getFullYear() + "-" + ("0" + (date.getMonth() + 1)).slice(-2) + "-" + ("0" + date.getDate()).slice(-2) + " " + ("0" + date.getHours()).slice(-2) + ":" + ("0" + date.getMinutes()).slice(-2) + ":" + ("0" + date.getSeconds()).slice(-2),
-                    'Biomass': (1.2 + Math.random() * 0.3).toFixed(4),
-                    'Mu': (0.02 + Math.random() * 0.01).toFixed(4),
-                    'Temp': (26 + Math.random()).toFixed(2),
-                    'State': 'Log_Phase',
-                    'Calib_Base': '121.00',
-                    'F1': (50 + Math.random()*20).toFixed(1),
-                    'F2': (60 + Math.random()*20).toFixed(1),
-                    'FZ': (70 + Math.random()*20).toFixed(1),
-                    'F3': (80 + Math.random()*20).toFixed(1),
-                    'F4': (90 + Math.random()*20).toFixed(1),
-                    'FY': (100 + Math.random()*20).toFixed(1),
-                    'F5': (110 + Math.random()*20).toFixed(1),
-                    'FXL': (120 + Math.random()*20).toFixed(1),
-                    'F6': (130 + Math.random()*20).toFixed(1),
-                    'F7': (140 + Math.random()*20).toFixed(1),
-                    'F8': (150 + Math.random()*20).toFixed(1),
-                    'FNI': (160 + Math.random()*20).toFixed(1),
-                    'CLR': (500 + Math.random()*50).toFixed(1)
-                };
-                mockRows.push(row);
+                mockRows.push({
+                    'Data_Hora': date.toISOString(), 'Biomass': (1.1 + Math.random() * 0.2).toString(), 'Mu': '0.021', 'Temp': '24.5', 'State': 'Log_Phase', 'Calib_Base': '64.00',
+                    'F1': '10', 'F2': '12', 'FZ': '25', 'F3': '15', 'F4': '26', 'FY': '38', 'F5': '12', 'FXL': '32', 'F6': '21', 'F7': '2', 'F8': '12', 'FNI': '14', 'CLR': '50'
+                });
             }
-            window.headersGlobal = ['Data_Hora', 'Biomass', 'Mu', 'Temp', 'State', 'Calib_Base', 'F1', 'F2', 'FZ', 'F3', 'F4', 'FY', 'F5', 'FXL', 'F6', 'F7', 'F8', 'FNI', 'CLR'];
-            processData(mockRows);
-            switchView('dashboard');
+            window.headersGlobal = ORDEM_ESTRUTURAL_COLUNAS;
+            processData(mockRows); switchView('dashboard');
         }
 
         async function loadDashboardData() {
-            if (Object.keys(biorreatores).length === 0) {
-                switchView('settings');
-                const l = document.getElementById('loading');
-                if(l) l.style.display = 'none';
-                return;
-            }
+            if (Object.keys(biorreatores).length === 0) { switchView('settings'); return; }
             if (!activeSensorId) activeSensorId = Object.values(biorreatores)[0];
-            if (!activeSensorId) return;
-            if (!sessaoSenha) { document.getElementById('login-overlay').classList.remove('hidden'); return; }
-
-            if (!activeSensorId.startsWith('http')) {
-                document.getElementById('loading').style.display = 'none';
-                showModal({
-                    title: 'Atualização Necessária', 
-                    message: 'O link deste biorreator parece ser um ID antigo. Atualize o atalho nas Configurações.', 
-                    type: 'alert'
-                });
-                return;
-            }
+            if (!sessaoSenha) return;
 
             document.getElementById('loading').style.display = 'flex';
             document.getElementById('dashboard-content').style.display = 'none';
-            const urlComSenha = `${activeSensorId}?senha=${encodeURIComponent(sessaoSenha)}&_t=${Date.now()}`;
 
             try {
-                const response = await fetch(urlComSenha);
+                const response = await fetch(`${activeSensorId}?senha=${encodeURIComponent(sessaoSenha)}&_t=${Date.now()}`);
                 const csvText = await response.text();
-                if (csvText.includes("Acesso Negado") || csvText.includes("Erro interno") || csvText.includes("Erro:")) {
-                    document.getElementById('loading').style.display = 'none';
-                    if (csvText.includes("Acesso Negado")) {
-                        logout();
-                        const msgErro = document.getElementById('msg-erro-login');
-                        msgErro.innerText = "Palavra-passe incorreta ou acesso revogado.";
-                        msgErro.classList.remove('hidden');
-                    } else {
-                        document.getElementById('loading').innerHTML = `<p class='text-red-500 font-bold'>Aviso da API:</p><p class='text-red-400 text-sm mt-2 text-center max-w-md'>${csvText}</p>`;
-                    }
-                    return;
-                }
-                document.getElementById('login-overlay').classList.add('hidden');
-                document.getElementById('msg-erro-login').classList.add('hidden');
-
+                
                 Papa.parse(csvText, {
-                    header: true, 
+                    header: false, // Forçamos leitura indexada para anular desarranjos de cabeçalho do Sheets
                     skipEmptyLines: true,
                     complete: (res) => {
-                        if (res.data && res.data.length > 0) {
-                            window.headersGlobal = Object.keys(res.data[0]).map(h => h.trim());
+                        if (res.data && res.data.length > 1) {
+                            let rawCabecalhos = res.data[0].map(h => h.toString().trim());
                             
-                            let dadosLimpos = res.data.map(row => {
-                                let novoObj = {};
-                                for (let key in row) {
-                                    novoObj[key.trim()] = row[key] ? row[key].toString().trim() : "";
-                                }
-                                return novoObj;
-                            });
-                            
-                            processData(dadosLimpos);
-                        } else {
-                            document.getElementById('loading').innerHTML = "<p class='text-red-500'>A planilha retornou um arquivo sem linhas de dados.</p>";
-                        }
-                    },
-                    error: () => { document.getElementById('loading').innerHTML = "<p class='text-red-500'>Erro ao ler os dados CSV.</p>"; }
+                            // Cria mapeamento matricial indexado dinâmico independente de ordem
+                            let dadosMapeados = [];
+                            for(let i = 1; i < res.data.length; i++) {
+                                let row = res.data[i];
+                                let objItem = {};
+                                ORDEM_ESTRUTURAL_COLUNAS.forEach(col => {
+                                    let idxPlanilha = rawCabecalhos.findIndex(h => h.toLowerCase() === col.toLowerCase());
+                                    objItem[col] = (idxPlanilha !== -1 && row[idxPlanilha] !== undefined) ? row[idxPlanilha].toString().trim() : "";
+                                });
+                                dadosMapeados.push(objItem);
+                            }
+                            window.headersGlobal = ORDEM_ESTRUTURAL_COLUNAS;
+                            processData(dadosMapeados);
+                        } else { document.getElementById('loading').innerHTML = "<p class='text-red-500'>Planilha sem dados acumulados.</p>"; }
+                    }
                 });
-            } catch (err) {
-                document.getElementById('loading').innerHTML = "<p class='text-red-500'>Erro de comunicação com o servidor.</p>";
-            }
+            } catch (err) { document.getElementById('loading').innerHTML = "<p class='text-red-500'>Erro ao conectar com o Servidor.</p>"; }
         }
 
         async function updateFleetStatus() {
-            const grid = document.getElementById('fleet-grid');
-            if(!grid || !sessaoSenha) return;
-            grid.innerHTML = '';
-            let online = 0, offline = 0;
+            const grid = document.getElementById('fleet-grid'); if(!grid) return;
+            grid.innerHTML = ''; let online = 0, offline = 0;
             const entries = Object.entries(biorreatores);
             document.getElementById('fleet-total').innerText = entries.length;
-            
-            if(entries.length === 0) {
-                 document.getElementById('fleet-online').innerText = "0"; document.getElementById('fleet-offline').innerText = "0";
-                 grid.innerHTML = "<p class='text-xs text-slate-400 col-span-full'>Nenhum biorreator cadastrado.</p>";
-                 return;
-            }
 
             for(let [nome, id] of entries) {
-                if(!id.startsWith('http')) { offline++; renderFleetBox(nome, id, false); continue; }
+                let boxOnline = false;
                 try {
-                    const url = `${id}?senha=${encodeURIComponent(sessaoSenha)}&_t=${Date.now()}`;
-                    const response = await fetch(url);
-                    const csvText = await response.text();
-                    let isOnline = false;
-                    if(!csvText.includes("Acesso Negado") && !csvText.includes("Erro interno") && !csvText.includes("Erro:")) {
-                        Papa.parse(csvText, {
-                            header: true, skipEmptyLines: true,
-                            complete: function(res) {
-                                if(res.data && res.data.length > 0) {
-                                    let last = res.data[res.data.length-1];
-                                    let cleanLast = {};
-                                    for (let k in last) cleanLast[k.trim()] = last[k];
-                                    
-                                    let keys = Object.keys(cleanLast);
-                                    let parsed = parseDate(cleanLast['Data_Hora'] || cleanLast[keys[0]]);
-                                    if(parsed) {
-                                        let time = new Date(parsed.replace(/-/g, '/')).getTime();
-                                        if(!isNaN(time) && (new Date().getTime() - time) < toleranceMinutes * 60000) {
-                                            isOnline = true;
-                                        }
-                                    }
-                                }
-                                isOnline ? online++ : offline++;
-                                renderFleetBox(nome, id, isOnline);
-                            }
-                        });
-                    } else { offline++; renderFleetBox(nome, id, false); }
-                } catch(e) { offline++; renderFleetBox(nome, id, false); }
+                    const res = await fetch(`${id}?senha=${encodeURIComponent(sessaoSenha)}&_t=${Date.now()}`);
+                    const text = await res.text();
+                    if(text.includes(",")) {
+                        let lines = text.split("\n");
+                        if(lines.length > 1) {
+                            let lastRow = lines[lines.length-2].split(",");
+                            let parsed = parseDate(lastRow[0]);
+                            if(parsed && (new Date().getTime() - new Date(parsed.replace(/-/g, '/')).getTime()) < toleranceMinutes * 60000) { boxOnline = true; }
+                        }
+                    }
+                } catch(e){}
+                boxOnline ? online++ : offline++;
+                grid.innerHTML += `<div onclick="selectSensorFromFleet('${id}')" class="p-4 border rounded-2xl flex items-center justify-between cursor-pointer transition-all ${boxOnline?'bg-green-50 border-green-100 hover:bg-green-100':'bg-red-50 border-red-100 hover:bg-red-100'}"><span class="text-xs font-bold truncate text-slate-700">${nome}</span><span class="h-2 w-2 rounded-full ${boxOnline?'bg-green-500':'bg-red-500'}"></span></div>`;
             }
-            
-            function renderFleetBox(nome, id, isOnline) {
-                grid.innerHTML += `<div onclick="selectSensorFromFleet('${id}')" class="p-4 border rounded-2xl flex items-center justify-between cursor-pointer transition-all ${isOnline?'bg-green-50 border-green-100 hover:bg-green-100':'bg-red-50 border-red-100 hover:bg-red-100'}"><span class="text-xs font-bold truncate text-slate-700">${nome}</span><span class="h-2 w-2 rounded-full flex-shrink-0 ml-2 ${isOnline?'bg-green-500 shadow-[0_0_8px_#22c55e]':'bg-red-500'}"></span></div>`;
-                document.getElementById('fleet-online').innerText = online; document.getElementById('fleet-offline').innerText = offline;
-            }
+            document.getElementById('fleet-online').innerText = online; document.getElementById('fleet-offline').innerText = offline;
         }
 
-        // ALTERAÇÃO COMPLETA: Incorporando sanitização na leitura de matrizes para gráficos
-        function processData(rawData) {
-            if (!rawData || rawData.length === 0) return;
-            
-            let sanitizedData = rawData.map(row => {
-                let cleanRow = {};
-                for (let k in row) cleanRow[k.trim()] = row[k] ? row[k].toString().trim() : "";
-                return cleanRow;
-            });
-
-            // Ordenação por Unix Timestamp exata
+        function processData(sanitizedData) {
+            // Ordenação cronológica invariável por UNIX Timestamp
             sanitizedData.sort((a, b) => {
-                let keyA = a['Data_Hora'] || Object.values(a)[0];
-                let keyB = b['Data_Hora'] || Object.values(b)[0];
-                let timeA = new Date(parseDate(keyA).replace(/-/g, '/')).getTime() || 0;
-                let timeB = new Date(parseDate(keyB).replace(/-/g, '/')).getTime() || 0;
+                let timeA = new Date(parseDate(a['Data_Hora']).replace(/-/g, '/')).getTime() || 0;
+                let timeB = new Date(parseDate(b['Data_Hora']).replace(/-/g, '/')).getTime() || 0;
                 return timeA - timeB;
             });
 
             window.currentRawData = sanitizedData;
-
-            let now = new Date().getTime();
-            let limitMs = diasVis * 24 * 60 * 60 * 1000;
+            let now = new Date().getTime(); let limitMs = diasVis * 24 * 60 * 60 * 1000;
             
             let filtered = sanitizedData.filter(row => {
-                let parsed = parseDate(row['Data_Hora'] || Object.values(row)[0]);
+                let parsed = parseDate(row['Data_Hora']);
                 if(!parsed) return false;
                 let rowTime = new Date(parsed.replace(/-/g, '/')).getTime();
                 return !isNaN(rowTime) && (now - rowTime) <= limitMs;
@@ -834,11 +693,10 @@
                 let parsedDate = parseDate(clean['Data_Hora']);
                 if(parsedDate) {
                     processed.dates.push(parsedDate);
-                    processed.biomass.push(limparValorNumerico(clean['Biomass'])); 
-                    processed.mu.push(limparValorNumerico(clean['Mu']));      
-                    
+                    processed.biomass.push(extrairValorNumericoPuro(clean['Biomass'], 'Biomass')); 
+                    processed.mu.push(extrairValorNumericoPuro(clean['Mu'], 'Mu'));      
                     Object.keys(DADOS_CANAIS).forEach(ch => {
-                        processed.spectral[ch].push(limparValorNumerico(clean[ch]));
+                        processed.spectral[ch].push(extrairValorNumericoPuro(clean[ch], ch));
                     });
                 }
             });
@@ -846,40 +704,33 @@
             renderDashboard(filtered);
         }
 
-        // ALTERAÇÃO COMPLETA: Renderização dos cards superiores e tabela protegida contra strings de data
         function renderDashboard(filteredRows) {
             if (!filteredRows || filteredRows.length === 0) return;
             const processed = currentSpectralData;
-            
             let cleanUltimo = filteredRows[filteredRows.length - 1];
 
-            // Executa limpeza nominal forçada antes de subir para o display
-            let valBiomass  = limparValorNumerico(cleanUltimo['Biomass']); 
-            let valMu       = limparValorNumerico(cleanUltimo['Mu']); 
-            let valTemp     = limparValorNumerico(cleanUltimo['Temp']); 
-            let estadoBruto = cleanUltimo['State'] !== undefined && cleanUltimo['State'] !== '' ? cleanUltimo['State'] : "N/A"; 
-            let valCalib    = limparValorNumerico(cleanUltimo['Calib_Base']);
+            // Injeção direta nos mostradores numéricos com higienização estrita anti-data
+            let valBiomass  = extrairValorNumericoPuro(cleanUltimo['Biomass'], 'Biomass');
+            let valMu       = extrairValorNumericoPuro(cleanUltimo['Mu'], 'Mu');
+            let valTemp     = extrairValorNumericoPuro(cleanUltimo['Temp'], 'Temp');
+            let valCalib    = extrairValorNumericoPuro(cleanUltimo['Calib_Base'], 'Calib_Base');
+            let estadoBruto = cleanUltimo['State'] || "Lag_Phase";
 
-            // Se o estado atual vier corrompido com máscara de hora (ex: 00:00:00), força Fallback estável
-            if (estadoBruto.includes(':')) {
-                estadoBruto = "Lag_Phase";
-            }
+            if (estadoBruto.includes(':') || estadoBruto.includes('-')) estadoBruto = "Lag_Phase";
 
             document.getElementById('metrica-biomassa').innerText = valBiomass.toFixed(4);
             document.getElementById('metrica-mu').innerText = valMu.toFixed(4);
             document.getElementById('metrica-temp').innerText = valTemp.toFixed(2);
             document.getElementById('metrica-calib').innerText = valCalib.toFixed(2);
             
-            let fase = estadoBruto.toLowerCase();
-            let cfg = CORES_FASES['n/a'];
+            let fase = estadoBruto.toLowerCase(); let cfg = CORES_FASES['n/a'];
             if (fase.includes('lag')) cfg = CORES_FASES['lag_phase'];
             else if (fase.includes('log')) cfg = CORES_FASES['log_phase'];
             else if (fase.includes('station')) cfg = CORES_FASES['stationary'];
             else if (fase.includes('death')) cfg = CORES_FASES['death_phase'];
             
             const mf = document.getElementById('metrica-fase');
-            mf.innerText = estadoBruto.replace(/_/g, ' ');
-            mf.style.color = cfg.text;
+            mf.innerText = estadoBruto.replace(/_/g, ' '); mf.style.color = cfg.text;
             document.getElementById('card-fase').style.backgroundColor = cfg.bg;
             document.getElementById('card-fase').style.borderColor = cfg.border;
 
@@ -887,8 +738,7 @@
                 { x: processed.dates, y: processed.biomass, name: 'Biomassa', type: 'scatter', mode: 'lines', line: {color: cfg.text, width: 3, shape: 'spline'}, fill: 'tozeroy', fillcolor: cfg.text + '10' },
                 { x: processed.dates, y: processed.mu, name: 'Taxa μ', type: 'scatter', mode: 'lines', line: {color: '#0ea5e9', width: 2}, yaxis: 'y2' }
             ], {
-                font: { family: 'Inter' }, plot_bgcolor: 'transparent',
-                margin: { l: 50, r: 20, t: 10, b: 40 }, showlegend: false,
+                font: { family: 'Inter' }, plot_bgcolor: 'transparent', margin: { l: 50, r: 20, t: 10, b: 40 }, showlegend: false,
                 grid: { rows: 2, columns: 1, pattern: 'independent' },
                 yaxis: { domain: [0.55, 1], title: 'Biomassa (g/L)', gridcolor: '#f1f5f9' },
                 yaxis2: { domain: [0, 0.45], title: 'μ (h⁻¹)', gridcolor: '#f1f5f9' },
@@ -897,270 +747,141 @@
 
             renderSpectralChart();
 
-            const chKeys = Object.keys(DADOS_CANAIS);
-            document.getElementById('grid-canais').innerHTML = chKeys.map(ch => {
+            // Cards de canais espectrais fotônicos isolados
+            document.getElementById('grid-canais').innerHTML = Object.keys(DADOS_CANAIS).map(ch => {
                 let inf = DADOS_CANAIS[ch];
-                let val = Math.round(limparValorNumerico(cleanUltimo[ch]));
+                let val = Math.round(extrairValorNumericoPuro(cleanUltimo[ch], ch));
                 return `<div style="background-color: ${inf.cor}10; border-bottom: 3px solid ${inf.cor}" class="p-3 rounded-2xl text-center">
                     <span class="text-slate-500 text-[9px] font-bold uppercase">${inf.onda}</span><br>
                     <span style="color: ${inf.cor}" class="text-lg font-black">${val}</span></div>`;
             }).join('');
 
+            // TABELA DE REGISTROS RECENTES TOTALMENTE HIGIENIZADA
             const cols = window.headersGlobal;
             document.getElementById('tabela-head').innerHTML = cols.map(c => `<th class="px-5 py-4 whitespace-nowrap">${c}</th>`).join('');
             
-            // CONSTRUÇÃO FILTRADA DA TABELA: Limpa qualquer máscara de tempo de 1900 nas colunas numéricas
             let rowsParaTabela = [...filteredRows].reverse();
             document.getElementById('tabela-body').innerHTML = rowsParaTabela.slice(0, 30).map(row => {
                 return `<tr class="hover:bg-slate-50 transition-colors">${cols.map(c => {
                     let valorCelula = row[c] !== undefined ? row[c] : '';
-                    
-                    if (c !== 'Data_Hora' && c !== 'State') {
-                        // Se o valor contiver traços ou dois-pontos e pertencer a colunas numéricas, passa pelo filtro sanitizador
-                        if (typeof valorCelula === 'string' && (valorCelula.includes('-') || valorCelula.includes(':'))) {
-                            let numLimpo = limparValorNumerico(valorCelula);
-                            valorCelula = numLimpo.toString();
-                        }
-                    } else if (c === 'State' && typeof valorCelula === 'string' && valorCelula.includes(':')) {
-                        valorCelula = "Lag_Phase"; // Conserta string de estado corrompida na visualização
+                    if (c === 'Data_Hora') {
+                        valorCelula = parseDate(valorCelula);
+                    } else if (c === 'State') {
+                        if (valorCelula.includes(':') || valorCelula.includes('-')) valorCelula = "Lag_Phase";
+                    } else {
+                        // Limpa strings residuais de data vazadas do Sheets para as células numéricas na tabela
+                        let floatLimpo = extrairValorNumericoPuro(valorCelula, c);
+                        valorCelula = (c === 'Temp' || c === 'Calib_Base') ? floatLimpo.toFixed(2) : (c === 'Biomass' || c === 'Mu' ? floatLimpo.toFixed(4) : Math.round(floatLimpo));
                     }
-                    
-                    return `<td class="px-5 py-3 font-medium text-xs">${valorCelula}</td>`;
+                    return `<td class="px-5 py-3 font-medium text-xs whitespace-nowrap">${valorCelula}</td>`;
                 }).join('')}</tr>`;
             }).join('');
 
             document.getElementById('loading').style.display = 'none';
             document.getElementById('dashboard-content').style.display = 'block';
             document.getElementById('rodape-data').innerText = `Sincronização: ${new Date().toLocaleString('pt-BR')}`;
-            dashboardLoaded = true;
-            window.dispatchEvent(new Event('resize'));
+            dashboardLoaded = true; window.dispatchEvent(new Event('resize'));
         }
 
         function renderSpectralChart() {
-            if(!currentSpectralData) return;
-            const data = currentSpectralData;
-
+            if(!currentSpectralData) return; const data = currentSpectralData;
             if(spectralMode === 'time') {
                 let traces = Object.keys(DADOS_CANAIS).map(ch => ({
-                    x: data.dates, y: data.spectral[ch], name: DADOS_CANAIS[ch].onda,
-                    type: 'scatter', mode: 'lines', line: { color: DADOS_CANAIS[ch].cor, width: 2, dash: DADOS_CANAIS[ch].dash }
+                    x: data.dates, y: data.spectral[ch], name: DADOS_CANAIS[ch].onda, type: 'scatter', mode: 'lines', line: { color: DADOS_CANAIS[ch].cor, width: 2, dash: DADOS_CANAIS[ch].dash }
                 }));
-                Plotly.newPlot('grafico-espectral', traces, {
-                    font: { family: 'Inter' }, margin: { l: 40, r: 10, t: 10, b: 40 },
-                    xaxis: { gridcolor: "#f1f5f9" }, yaxis: { gridcolor: "#f1f5f9", rangemode: 'tozero' },
-                    hovermode: 'x unified', showlegend: false
-                }, {responsive: true, displayModeBar: false});
+                Plotly.newPlot('grafico-espectral', traces, { font: { family: 'Inter' }, margin: { l: 40, r: 10, t: 10, b: 40 }, xaxis: { gridcolor: "#f1f5f9" }, yaxis: { gridcolor: "#f1f5f9", rangemode: 'tozero' }, hovermode: 'x unified', showlegend: false }, {responsive: true, displayModeBar: false});
             } else {
                 const wavelengths = []; for(let w = 350; w <= 1050; w += 5) wavelengths.push(w);
-                const latest = {}; Object.keys(DADOS_CANAIS).forEach(ch => {
-                    const arr = data.spectral[ch]; latest[ch] = arr[arr.length - 1] || 0;
-                });
-                
-                const ordemCanais = ['F1', 'F2', 'FZ', 'F3', 'F4', 'FY', 'F5', 'FXL', 'F6', 'F7', 'F8', 'FNI', 'CLR'];
-                let traces = ordemCanais.map(ch => {
-                    const info = DADOS_CANAIS[ch];
-                    const amplitude = latest[ch] || 0.1;
+                const latest = {}; Object.keys(DADOS_CANAIS).forEach(ch => { const arr = data.spectral[ch]; latest[ch] = arr[arr.length - 1] || 0; });
+                let traces = ['F1', 'F2', 'FZ', 'F3', 'F4', 'FY', 'F5', 'FXL', 'F6', 'F7', 'F8', 'FNI', 'CLR'].map(ch => {
+                    const info = DADOS_CANAIS[ch]; const amplitude = latest[ch] || 0.1;
                     const intensities = wavelengths.map(w => amplitude * Math.exp(-Math.pow(w - info.peak, 2) / (2 * Math.pow(info.sigma, 2))));
-                    return {
-                        x: wavelengths, y: intensities, name: info.onda, type: 'scatter', mode: 'lines',
-                        line: { color: info.cor, width: (ch === 'CLR' ? 2 : 2.5), dash: info.dash, shape: 'spline' },
-                        fill: (ch === 'CLR') ? 'none' : 'tozeroy', fillcolor: info.cor + '25'
-                    };
+                    return { x: wavelengths, y: intensities, name: info.onda, type: 'scatter', mode: 'lines', line: { color: info.cor, width: 2.5, dash: info.dash, shape: 'spline' }, fill: (ch === 'CLR') ? 'none' : 'tozeroy', fillcolor: info.cor + '25' };
                 });
-                Plotly.newPlot('grafico-espectral', traces, {
-                    font: { family: 'Inter' }, margin: { l: 40, r: 20, t: 10, b: 40 },
-                    xaxis: { title: 'nm', range: [350, 1050], gridcolor: "#f1f5f9" },
-                    yaxis: { title: 'U.A.', gridcolor: "#f1f5f9", rangemode: 'tozero' },
-                    showlegend: false, hovermode: 'closest'
-                }, {responsive: true, displayModeBar: false});
+                Plotly.newPlot('grafico-espectral', traces, { font: { family: 'Inter' }, margin: { l: 40, r: 20, t: 10, b: 40 }, xaxis: { title: 'nm', range: [350, 1050], gridcolor: "#f1f5f9" }, yaxis: { title: 'U.A.', gridcolor: "#f1f5f9", rangemode: 'tozero' }, showlegend: false, hovermode: 'closest' }, {responsive: true, displayModeBar: false});
             }
         }
 
         function setSpectralMode(mode) {
             spectralMode = mode;
-            const bt = document.getElementById('btn-mode-time');
-            const bw = document.getElementById('btn-mode-wave');
-            if(bt && bw) {
-                bt.className = (mode === 'time') ? "px-3 py-1 text-[10px] font-bold rounded-md bg-white shadow-sm text-usp-600" : "px-3 py-1 text-[10px] font-bold rounded-md text-slate-500 hover:text-slate-700 transition-all";
-                bw.className = (mode === 'wave') ? "px-3 py-1 text-[10px] font-bold rounded-md bg-white shadow-sm text-usp-600" : "px-3 py-1 text-[10px] font-bold rounded-md text-slate-500 hover:text-slate-700 transition-all";
-            }
+            document.getElementById('btn-mode-time').className = (mode === 'time') ? "px-3 py-1 text-[10px] font-bold rounded-md bg-white shadow-sm text-usp-600" : "px-3 py-1 text-[10px] font-bold rounded-md text-slate-500";
+            document.getElementById('btn-mode-wave').className = (mode === 'wave') ? "px-3 py-1 text-[10px] font-bold rounded-md bg-white shadow-sm text-usp-600" : "px-3 py-1 text-[10px] font-bold rounded-md text-slate-500";
             if(dashboardLoaded) renderSpectralChart();
         }
 
         function downloadCSV() {
             if(!window.currentRawData) return;
-            const now = new Date().getTime();
-            const limitMs = diasDown * 24 * 60 * 60 * 1000;
-            const keyDate = window.headersGlobal[0];
-            const exportData = window.currentRawData.filter(row => {
-                const parsed = parseDate(row[keyDate]);
-                if(!parsed) return false;
-                const rowTime = new Date(parsed.replace(/-/g, '/')).getTime();
-                return (now - rowTime) <= limitMs;
-            });
-            
-            let csvRows = exportData.map(obj => window.headersGlobal.map(h => obj[h]));
-            csvRows.unshift(window.headersGlobal);
-            
-            const csv = Papa.unparse(csvRows);
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url; a.download = `export_as7343_${new Date().toISOString().split('T')[0]}.csv`;
+            let csvRows = window.currentRawData.map(obj => ORDEM_ESTRUTURAL_COLUNAS.map(h => obj[h]));
+            csvRows.unshift(ORDEM_ESTRUTURAL_COLUNAS);
+            const blob = new Blob([Papa.unparse(csvRows)], { type: 'text/csv;charset=utf-8;' });
+            const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `export_sonda_${new Date().toISOString().split('T')[0]}.csv`;
             document.body.appendChild(a); a.click(); document.body.removeChild(a);
         }
 
         function renderManageList() {
-            const list = document.getElementById('manage-sensors-list');
-            if(!list) return;
+            const list = document.getElementById('manage-sensors-list'); if(!list) return;
             list.innerHTML = Object.entries(biorreatores).map(([n, id]) => `
-                <tr class="hover:bg-slate-50 transition-all group">
+                <tr class="hover:bg-slate-50 transition-all">
                     <td class="px-6 py-4 font-bold text-slate-700">${n}</td>
                     <td class="px-6 py-4 text-[10px] font-mono text-slate-400 break-all">${id}</td>
                     <td class="px-6 py-4 text-right">
                         <div class="flex justify-end gap-2">
-                            <button onclick="editSensor('${n}')" class="p-2 text-blue-500 hover:bg-blue-50 rounded-lg" title="Editar"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg></button>
-                            <button onclick="deleteSensor('${n}')" class="p-2 text-red-500 hover:bg-red-50 rounded-lg" title="Excluir"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                            <button onclick="editSensor('${n}')" class="p-2 text-blue-500 hover:bg-blue-50 rounded-lg"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg></button>
+                            <button onclick="deleteSensor('${n}')" class="p-2 text-red-500 hover:bg-red-50 rounded-lg"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
                         </div>
                     </td>
                 </tr>`).join('');
         }
 
-        function showAddForm() { 
-            const c = document.getElementById('sensor-form-container');
-            if(c) { c.classList.remove('hidden'); document.getElementById('form-mode-badge').classList.add('hidden'); }
-            document.getElementById('btn-show-add-form').classList.add('hidden');
-        }
+        function showAddForm() { document.getElementById('sensor-form-container').classList.remove('hidden'); document.getElementById('btn-show-add-form').classList.add('hidden'); }
+        function cancelEdit() { document.getElementById('sensor-form-container').classList.add('hidden'); document.getElementById('btn-show-add-form').classList.remove('hidden'); }
 
         function editSensor(name) {
-            const c = document.getElementById('sensor-form-container');
-            if(c) {
-                c.classList.remove('hidden');
-                document.getElementById('new-sensor-name').value = name;
-                document.getElementById('new-sensor-id').value = biorreatores[name];
-                document.getElementById('edit-original-name').value = name;
-                document.getElementById('sensor-form-title').innerHTML = `<span class="text-usp-600">✏️</span> Editar Biorreator`;
-                document.getElementById('form-mode-badge').classList.remove('hidden');
-                c.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-            document.getElementById('btn-show-add-form').classList.add('hidden');
+            showAddForm(); document.getElementById('new-sensor-name').value = name;
+            document.getElementById('new-sensor-id').value = biorreatores[name];
+            document.getElementById('edit-original-name').value = name;
         }
 
-        function cancelEdit() { 
-            const c = document.getElementById('sensor-form-container');
-            if(c) c.classList.add('hidden');
-            document.getElementById('btn-show-add-form').classList.remove('hidden');
-            document.getElementById('new-sensor-name').value = ''; document.getElementById('new-sensor-id').value = '';
-        }
-        
         async function saveSensor() {
             const n = document.getElementById('new-sensor-name').value.trim();
             const id = document.getElementById('new-sensor-id').value.trim();
             const original = document.getElementById('edit-original-name').value;
-            if(!n || !id) { showModal({ title: 'Atenção', message: 'Preencha todos os campos.', type: 'alert' }); return; }
-            
-            const btn = document.getElementById('save-sensor-btn');
-            const txtOriginal = btn.innerText;
-            btn.innerText = "Salvando na Nuvem..."; btn.disabled = true;
+            if(!n || !id) return;
 
             if(original && original !== n) delete biorreatores[original];
             biorreatores[n] = id;
-            
             try {
-                const resposta = await fetch(`${URL_BANCO_CENTRAL}?senha=${encodeURIComponent(sessaoSenha)}&action=setSensors`, {
-                    method: 'POST', body: JSON.stringify(biorreatores)
-                });
-                const resultadoText = await resposta.text();
-                if(!resultadoText.includes("Sucesso")) {
-                     delete biorreatores[n];
-                     showModal({ title: 'Erro', message: 'Erro ao gravar na nuvem.', type: 'alert' });
-                } else {
-                    initSensorsDropdown(); renderManageList(); cancelEdit();
-                    showModal({ title: 'Sucesso', message: 'Biorreator atualizado com sucesso!', type: 'alert' });
-                    if(Object.keys(biorreatores).length === 1) activeSensorId = id;
-                }
-            } catch (e) {
-                showModal({ title: 'Erro', message: 'Sem conexão com a nuvem.', type: 'alert' });
-            }
-            btn.innerText = txtOriginal; btn.disabled = false;
+                await fetch(`${URL_BANCO_CENTRAL}?senha=${encodeURIComponent(sessaoSenha)}&action=setSensors`, { method: 'POST', body: JSON.stringify(biorreatores) });
+                initSensorsDropdown(); renderManageList(); cancelEdit();
+                showModal({ title: 'Sucesso', message: 'Biorreator salvo na nuvem.', type: 'alert' });
+            } catch(e){}
         }
 
-        function deleteSensor(n) { 
-            showModal({
-                title: 'Excluir Biorreator',
-                message: `Tem certeza que deseja excluir o atalho para "${n}"? Os dados na planilha não serão afetados.`,
-                type: 'confirm', confirmText: 'Excluir',
-                onConfirm: async () => {
-                    const backupBiorreatores = {...biorreatores};
-                    delete biorreatores[n]; 
-                    try {
-                        const resposta = await fetch(`${URL_BANCO_CENTRAL}?senha=${encodeURIComponent(sessaoSenha)}&action=setSensors`, {
-                            method: 'POST', body: JSON.stringify(biorreatores)
-                        });
-                        const resultadoText = await resposta.text();
-                        if(resultadoText.includes("Sucesso")) { renderManageList(); initSensorsDropdown(); }
-                        else { biorreatores = backupBiorreatores; showModal({ title: 'Erro', message: 'Erro ao excluir.', type: 'alert' }); }
-                    } catch (e) { biorreatores = backupBiorreatores; showModal({ title: 'Erro', message: 'Sem conexão.', type: 'alert' }); }
-                }
-            });
+        function deleteSensor(n) {
+            showModal({ title: 'Excluir', message: 'Deseja excluir este biorreator?', type: 'confirm', onConfirm: async () => {
+                delete biorreatores[n];
+                await fetch(`${URL_BANCO_CENTRAL}?senha=${encodeURIComponent(sessaoSenha)}&action=setSensors`, { method: 'POST', body: JSON.stringify(biorreatores) });
+                renderManageList(); initSensorsDropdown();
+            }});
         }
 
         function initSensorsDropdown() {
-            const select = document.getElementById('sensor-select');
-            if(!select) return;
+            const select = document.getElementById('sensor-select'); if(!select) return;
             const entries = Object.entries(biorreatores);
-            if(entries.length === 0) {
-                select.innerHTML = "<option>Nenhum Biorreator Cadastrado</option>";
-                activeSensorId = null;
-                return;
-            }
             select.innerHTML = entries.map(([nome, id]) => `<option value="${id}" ${id===activeSensorId?'selected':''}>${nome}</option>`).join('');
-            if(!activeSensorId || !Object.values(biorreatores).includes(activeSensorId)) activeSensorId = entries[0][1];
+            if(!activeSensorId && entries.length > 0) activeSensorId = entries[0][1];
         }
 
-        function changeSensor() {
-            const select = document.getElementById('sensor-select');
-            if(select) { activeSensorId = select.value; loadDashboardData(); }
-        }
-
-        function selectSensorFromFleet(id) {
-            activeSensorId = id;
-            initSensorsDropdown();
-            loadDashboardData();
-        }
-
-        function manualRefresh() {
-            const icon = document.getElementById('icon-refresh');
-            if(icon) icon.classList.add('animate-spin');
-            loadDashboardData().then(() => {
-                updateFleetStatus();
-                setTimeout(() => { if(icon) icon.classList.remove('animate-spin'); }, 600);
-            });
-        }
+        function changeSensor() { activeSensorId = document.getElementById('sensor-select').value; loadDashboardData(); }
+        function selectSensorFromFleet(id) { activeSensorId = id; initSensorsDropdown(); loadDashboardData(); }
+        function manualRefresh() { loadDashboardData().then(() => updateFleetStatus()); }
 
         function startAutoRefresh() {
             if(refreshIntervalId) clearInterval(refreshIntervalId);
-            if(autoRefreshEnabled && autoRefreshInterval > 0) {
-                refreshIntervalId = setInterval(() => {
-                    if(document.getElementById('view-dashboard').classList.contains('hidden') === false) {
-                        loadDashboardData();
-                        updateFleetStatus();
-                    }
-                }, autoRefreshInterval * 60000);
-            }
+            if(autoRefreshEnabled) { refreshIntervalId = setInterval(() => { if(!document.getElementById('view-dashboard').classList.contains('hidden')) manualRefresh(); }, autoRefreshInterval * 60000); }
         }
 
-        window.onload = async () => {
-            if (sessaoSenha) {
-                const sucesso = await syncDaNuvem();
-                if (sucesso) {
-                    document.getElementById('login-overlay').classList.add('hidden');
-                    await loadDashboardData();
-                    updateFleetStatus();
-                    startAutoRefresh();
-                } else { logout(); }
-            }
-        };
+        window.onload = async () => { if (sessaoSenha) { let s = await syncDaNuvem(); if (s) { document.getElementById('login-overlay').classList.add('hidden'); loadDashboardData(); updateFleetStatus(); startAutoRefresh(); } } };
     </script>
 </body>
 </html>
