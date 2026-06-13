@@ -8,7 +8,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2=family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <script>
         tailwind.config = {
@@ -603,7 +603,7 @@
                      showModal({ title: 'Erro', message: 'Houve um erro ao gravar na nuvem.', type: 'alert' });
                 } else {
                     loadDashboardData(); startAutoRefresh();
-                    showModal({ title: 'Sucesso', message: 'Parâmetros globais atualizados com sucesso.', type: 'alert' });
+                    showModal({ title: 'Sucesso', message: 'Parâmetros globais updated com sucesso.', type: 'alert' });
                 }
             } catch (e) {
                 showModal({ title: 'Falha', message: 'Sem conexão com a nuvem.', type: 'alert' });
@@ -695,7 +695,6 @@
                             let dadosLimpos = res.data.map(row => {
                                 let novoObj = {};
                                 for (let key in row) {
-                                    // Remove espaços e sincroniza chaves perfeitamente
                                     novoObj[key.trim()] = row[key] ? row[key].toString().trim() : "";
                                 }
                                 return novoObj;
@@ -793,17 +792,20 @@
             renderDashboard(filtered);
         }
 
-        // CORREÇÃO DOS ACESSOS DA PLANILHA (CASE-SENSITIVE: Biomass, Mu, Temp, State, Calib_Base)
         function renderDashboard(filteredRows) {
+            if (!filteredRows || filteredRows.length === 0) return;
             const processed = currentSpectralData;
-            let ultimo = filteredRows[filteredRows.length - 1];
-
-            document.getElementById('metrica-biomassa').innerText = (parseFloat(ultimo['Biomass']) || 0).toFixed(4);
-            document.getElementById('metrica-mu').innerText = (parseFloat(ultimo['Mu']) || 0).toFixed(4);
-            document.getElementById('metrica-temp').innerText = (parseFloat(ultimo['Temp']) || 0).toFixed(2);
-            document.getElementById('metrica-calib').innerText = (parseFloat(ultimo['Calib_Base']) || 0).toFixed(2);
             
-            let estadoBruto = (ultimo['State'] || 'N/A').toString().trim();
+            // 1. CAPTURA O ÚLTIMO DADO REAL RECENTE DIRETAMENTE ANTES DE QUALQUER INVERSÃO
+            let ultimoReal = filteredRows[filteredRows.length - 1];
+
+            // 2. ATUALIZA OS 5 CARTÕES COM GARANTIA DE CHAVE EXATA (CASE-SENSITIVE)
+            document.getElementById('metrica-biomassa').innerText = (parseFloat(ultimoReal['Biomass']) || 0).toFixed(4);
+            document.getElementById('metrica-mu').innerText = (parseFloat(ultimoReal['Mu']) || 0).toFixed(4);
+            document.getElementById('metrica-temp').innerText = (parseFloat(ultimoReal['Temp']) || 0).toFixed(2);
+            document.getElementById('metrica-calib').innerText = (parseFloat(ultimoReal['Calib_Base']) || 0).toFixed(2);
+            
+            let estadoBruto = (ultimoReal['State'] || 'N/A').toString().trim();
             let fase = estadoBruto.toLowerCase();
             let cfg = CORES_FASES['n/a'];
             if (fase.includes('lag')) cfg = CORES_FASES['lag_phase'];
@@ -833,7 +835,7 @@
 
             document.getElementById('grid-canais').innerHTML = Object.keys(DADOS_CANAIS).map(ch => {
                 let inf = DADOS_CANAIS[ch];
-                let val = Math.round(parseFloat(ultimo[ch]) || 0);
+                let val = Math.round(parseFloat(ultimoReal[ch]) || 0);
                 return `<div style="background-color: ${inf.cor}10; border-bottom: 3px solid ${inf.cor}" class="p-3 rounded-2xl text-center">
                     <span class="text-slate-500 text-[9px] font-bold uppercase">${inf.onda}</span><br>
                     <span style="color: ${inf.cor}" class="text-lg font-black">${val}</span></div>`;
@@ -841,7 +843,10 @@
 
             const cols = window.headersGlobal;
             document.getElementById('tabela-head').innerHTML = cols.map(c => `<th class="px-5 py-4 whitespace-nowrap">${c}</th>`).join('');
-            document.getElementById('tabela-body').innerHTML = [...filteredRows].reverse().slice(0, 30).map(row => 
+            
+            // 3. AGORA SIM, INVERTE EXCLUSIVAMENTE PARA EXIBIR NA TABELA DE REGISTROS RECENTES
+            let rowsParaTabela = [...filteredRows].reverse();
+            document.getElementById('tabela-body').innerHTML = rowsParaTabela.slice(0, 30).map(row => 
                 `<tr class="hover:bg-slate-50 transition-colors">${cols.map(c => `<td class="px-5 py-3 font-medium text-xs">${row[c]||''}</td>`).join('')}</tr>`
             ).join('');
 
@@ -1016,52 +1021,4 @@
                         const resultadoText = await resposta.text();
                         if(resultadoText.includes("Sucesso")) { renderManageList(); initSensorsDropdown(); }
                         else { biorreatores = backupBiorreatores; showModal({ title: 'Erro', message: 'Erro ao excluir.', type: 'alert' }); }
-                    } catch (e) { biorreatores = backupBiorreatores; showModal({ title: 'Erro', message: 'Sem conexão.', type: 'alert' }); }
-                }
-            });
-        }
-
-        function initSensorsDropdown() {
-            const s = document.getElementById('sensor-select');
-            if(s) s.innerHTML = Object.entries(biorreatores).map(([n, id]) => `<option value="${id}" ${id===activeSensorId?'selected':''}>${n}</option>`).join('');
-        }
-
-        function changeSensor() {
-            activeSensorId = document.getElementById('sensor-select').value;
-            document.getElementById('dashboard-content').style.display = 'none';
-            document.getElementById('loading').style.display = 'flex';
-            loadDashboardData();
-        }
-
-        function manualRefresh() {
-            const icon = document.getElementById('icon-refresh');
-            if(icon) icon.classList.add('animate-spin');
-            loadDashboardData(); updateFleetStatus();
-            setTimeout(() => { if(icon) icon.className = 'w-4 h-4'; }, 800);
-        }
-
-        function selectSensorFromFleet(id) { document.getElementById('sensor-select').value = id; changeSensor(); }
-
-        function startAutoRefresh() {
-            if(refreshIntervalId) clearInterval(refreshIntervalId);
-            if(autoRefreshEnabled) refreshIntervalId = setInterval(() => { loadDashboardData(); updateFleetStatus(); }, autoRefreshInterval * 60000);
-        }
-
-        window.onload = async () => { 
-            document.getElementById('login-overlay').classList.remove('hidden');
-            if (sessaoSenha) {
-                const btn = document.getElementById('btn-login');
-                const btnOriginalText = btn.innerHTML;
-                btn.innerHTML = 'Sincronizando Banco de Dados...';
-                const sucesso = await syncDaNuvem();
-                if (sucesso) {
-                    document.getElementById('login-overlay').classList.add('hidden');
-                    loadDashboardData(); updateFleetStatus();
-                } else { logout(); }
-                btn.innerHTML = btnOriginalText;
-            }
-            startAutoRefresh(); 
-        };
-    </script>
-</body>
-</html>
+                    } catch (e) { biorreat
