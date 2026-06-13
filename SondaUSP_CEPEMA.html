@@ -98,8 +98,7 @@
                 <h1 class="text-4xl md:text-5xl font-extrabold text-slate-900 mb-6 tracking-tight">Monitoramento Espectral em <span class="text-transparent bg-clip-text bg-gradient-to-r from-usp-600 to-teal-500">Tempo Real</span></h1>
                 <p class="text-lg text-slate-600 mb-8 leading-relaxed">
                     Ambiente de testes dedicado para o sensor de alta resolução <strong>AS7343</strong>. Mantém a fusão de dados por Filtro de Kalman integrada a modelos matemáticos biocinéticos para estimativa não invasiva de biomassa de microalgas.
-                </p>
-                <div class="flex justify-center gap-4">
+                </                <div class="flex justify-center gap-4">
                     <button onclick="switchView('dashboard')" class="bg-usp-600 hover:bg-usp-700 text-white font-semibold py-3 px-8 rounded-full shadow-lg shadow-usp-500/30 transition-all transform hover:-translate-y-1">
                         Acessar Dashboard
                     </button>
@@ -389,7 +388,8 @@
         let refreshIntervalId = null;
         let dashboardLoaded = false;
         let currentSpectralData = null;
-// MAPEAMENTO DA ASSINATURA ESPECTRAL DO AS7343 EM MAIÚSCULAS (13 CANAIS DE TRANSMISSÃO)
+
+        // MAPEAMENTO DA ASSINATURA ESPECTRAL DO AS7343 EM MAIÚSCULAS (13 CANAIS DE TRANSMISSÃO)
         const DADOS_CANAIS = {
             'F1': {onda: '405nm', peak: 405, sigma: 10, cor: '#4f46e5', dash: 'solid'},
             'F2': {onda: '425nm', peak: 425, sigma: 10, cor: '#4338ca', dash: 'solid'},
@@ -406,11 +406,11 @@
             'CLR': {onda: 'Clear', peak: 600, sigma: 250, cor: '#94a3b8', dash: 'dash'}
         };
         const CORES_FASES = {
-            'Lag_Phase': { bg: '#f0f9ff', border: '#bae6fd', text: '#0284c7' },
-            'Log_Phase': { bg: '#f0fdf4', border: '#bbf7d0', text: '#16a34a' },
-            'Stationary': { bg: '#fffbeb', border: '#fef08a', text: '#d97706' },
-            'Death_Phase': { bg: '#fef2f2', border: '#fecaca', text: '#dc2626' },
-            'N/A': { bg: '#ffffff', border: '#e2e8f0', text: '#94a3b8' }
+            'lag_phase': { bg: '#f0f9ff', border: '#bae6fd', text: '#0284c7' },
+            'log_phase': { bg: '#f0fdf4', border: '#bbf7d0', text: '#16a34a' },
+            'stationary': { bg: '#fffbeb', border: '#fef08a', text: '#d97706' },
+            'death_phase': { bg: '#fef2f2', border: '#fecaca', text: '#dc2626' },
+            'n/a': { bg: '#ffffff', border: '#e2e8f0', text: '#94a3b8' }
         };
 
         async function syncDaNuvem() {
@@ -595,7 +595,7 @@
                      showModal({ title: 'Erro', message: 'Houve um erro ao gravar na nuvem.', type: 'alert' });
                 } else {
                     loadDashboardData(); startAutoRefresh();
-                    showModal({ title: 'Sucesso', message: 'Parâmetros globais atualizados com sucesso.', type: 'alert' });
+                    showModal({ title: 'Sucesso', message: 'Parâmetros globais updated com sucesso.', type: 'alert' });
                 }
             } catch (e) {
                 showModal({ title: 'Falha', message: 'Sem conexão com a nuvem.', type: 'alert' });
@@ -628,6 +628,7 @@
                 Object.keys(DADOS_CANAIS).forEach(ch => row[ch] = (Math.random() * 200).toFixed(1));
                 mockRows.push(row);
             }
+            window.headersGlobal = ['Data_Hora', 'Biomass', 'Mu', 'Temp', 'State', ...Object.keys(DADOS_CANAIS)];
             processData(mockRows.reverse());
             switchView('dashboard');
         }
@@ -676,8 +677,23 @@
                 document.getElementById('msg-erro-login').classList.add('hidden');
 
                 Papa.parse(csvText, {
-                    header: true, skipEmptyLines: true,
-                    complete: (res) => processData(res.data),
+                    header: false, skipEmptyLines: true, // Mudado para header false para varredura dinâmica limpa
+                    complete: (res) => {
+                        if(res.data.length > 0){
+                            // Mapeia e limpa os headers reais vindo do sheets
+                            window.headersGlobal = res.data[0].map(h => String(h).trim());
+                            
+                            // Converte a array de arrays em array de objetos baseado nos headers reais
+                            let objectsArray = res.data.slice(1).map(row => {
+                                let obj = {};
+                                window.headersGlobal.forEach((header, index) => {
+                                    obj[header] = row[index];
+                                });
+                                return obj;
+                            });
+                            processData(objectsArray);
+                        }
+                    },
                     error: () => { document.getElementById('loading').innerHTML = "<p class='text-red-500'>Erro ao ler os dados CSV.</p>"; }
                 });
             } catch (err) {
@@ -712,7 +728,8 @@
                             complete: function(res) {
                                 if(res.data.length > 0) {
                                     let last = res.data[res.data.length-1];
-                                    let parsed = parseDate(last[Object.keys(last)[0]]);
+                                    let firstKey = Object.keys(last)[0];
+                                    let parsed = parseDate(last[firstKey]);
                                     if(parsed) {
                                         let time = new Date(parsed.replace(/-/g, '/')).getTime();
                                         if((new Date().getTime() - time) < toleranceMinutes * 60000) isOnline = true;
@@ -734,7 +751,7 @@
 
         function processData(rawData) {
             if (!rawData || rawData.length === 0) return;
-            let keyDate = Object.keys(rawData[0])[0]; 
+            let keyDate = window.headersGlobal[0]; 
             window.currentRawData = rawData;
             let now = new Date().getTime();
             let limitMs = diasVis * 24 * 60 * 60 * 1000;
@@ -766,22 +783,23 @@
 
         function renderDashboard(filteredRows) {
             const processed = currentSpectralData;
-            let ultimoRaw = filteredRows[filteredRows.length - 1];
-            let ultimo = {}; for (let k in ultimoRaw) ultimo[k.trim()] = ultimoRaw[k];
+            let ultimo = filteredRows[filteredRows.length - 1];
 
+            // RENDERIZAÇÃO DINÂMICA COMPLEMENTAR DOS CARTÕES - SEM ÍNDICE FIXO
             document.getElementById('metrica-biomassa').innerText = (parseFloat(ultimo['Biomass']) || 0).toFixed(4);
             document.getElementById('metrica-temp').innerText = (parseFloat(ultimo['Temp']) || 0).toFixed(2);
             document.getElementById('metrica-mu').innerText = (parseFloat(ultimo['Mu']) || 0).toFixed(4);
             
-            let fase = (ultimo['State'] || 'N/A').toString().toLowerCase();
-            let cfg = CORES_FASES['N/A'];
-            if (fase.includes('lag')) cfg = CORES_FASES['Lag_Phase'];
-            else if (fase.includes('log')) cfg = CORES_FASES['Log_Phase'];
-            else if (fase.includes('station')) cfg = CORES_FASES['Stationary'];
-            else if (fase.includes('death')) cfg = CORES_FASES['Death_Phase'];
+            let estadoBruto = (ultimo['State'] || 'N/A').toString().trim();
+            let fase = estadoBruto.toLowerCase();
+            let cfg = CORES_FASES['n/a'];
+            if (fase.includes('lag')) cfg = CORES_FASES['lag_phase'];
+            else if (fase.includes('log')) cfg = CORES_FASES['log_phase'];
+            else if (fase.includes('station')) cfg = CORES_FASES['stationary'];
+            else if (fase.includes('death')) cfg = CORES_FASES['death_phase'];
             
             const mf = document.getElementById('metrica-fase');
-            mf.innerText = (ultimo['State'] || '--').replace(/_/g, ' ');
+            mf.innerText = estadoBruto.replace(/_/g, ' ');
             mf.style.color = cfg.text;
             document.getElementById('card-fase').style.backgroundColor = cfg.bg;
             document.getElementById('card-fase').style.borderColor = cfg.border;
@@ -808,7 +826,7 @@
                     <span style="color: ${inf.cor}" class="text-lg font-black">${val}</span></div>`;
             }).join('');
 
-            const cols = Object.keys(filteredRows[0]);
+            const cols = window.headersGlobal;
             document.getElementById('tabela-head').innerHTML = cols.map(c => `<th class="px-5 py-4 whitespace-nowrap">${c}</th>`).join('');
             document.getElementById('tabela-body').innerHTML = [...filteredRows].reverse().slice(0, 30).map(row => 
                 `<tr class="hover:bg-slate-50 transition-colors">${cols.map(c => `<td class="px-5 py-3 font-medium text-xs">${row[c]||''}</td>`).join('')}</tr>`
@@ -841,17 +859,16 @@
                     const arr = data.spectral[ch]; latest[ch] = arr[arr.length - 1] || 0;
                 });
                 
-                // ORDEM EXPANDIDA PARA RENDERIZAÇÃO DOS 14 CANAIS GAUSSIANOS DO SENSOR AS7343
-                //const order = ['clr', 'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12', 'F13', 'F14', 'nir'];
+                // ORDEM EM MAIÚSCULAS RIGOROSAMENTE ACESSADA DA VARIÁVEL CORRETA (CONVERTIDO EM TRACES)
                 const ordemCanais = ['F1', 'F2', 'FZ', 'F3', 'F4', 'FY', 'F5', 'FXL', 'F6', 'F7', 'F8', 'FNI', 'CLR'];
-                let traces = order.map(ch => {
+                let traces = ordemCanais.map(ch => {
                     const info = DADOS_CANAIS[ch];
                     const amplitude = latest[ch] || 0.1;
                     const intensities = wavelengths.map(w => amplitude * Math.exp(-Math.pow(w - info.peak, 2) / (2 * Math.pow(info.sigma, 2))));
                     return {
                         x: wavelengths, y: intensities, name: info.onda, type: 'scatter', mode: 'lines',
-                        line: { color: info.cor, width: (ch === 'clr' ? 2 : 2.5), dash: info.dash, shape: 'spline' },
-                        fill: (ch === 'clr') ? 'none' : 'tozeroy', fillcolor: info.cor + '25'
+                        line: { color: info.cor, width: (ch === 'CLR' ? 2 : 2.5), dash: info.dash, shape: 'spline' },
+                        fill: (ch === 'CLR') ? 'none' : 'tozeroy', fillcolor: info.cor + '25'
                     };
                 });
                 Plotly.newPlot('grafico-espectral', traces, {
@@ -878,14 +895,19 @@
             if(!window.currentRawData) return;
             const now = new Date().getTime();
             const limitMs = diasDown * 24 * 60 * 60 * 1000;
-            const keyDate = Object.keys(window.currentRawData[0])[0];
+            const keyDate = window.headersGlobal[0];
             const exportData = window.currentRawData.filter(row => {
                 const parsed = parseDate(row[keyDate]);
                 if(!parsed) return false;
                 const rowTime = new Date(parsed.replace(/-/g, '/')).getTime();
                 return (now - rowTime) <= limitMs;
             });
-            const csv = Papa.unparse(exportData);
+            
+            // Re-mapeia para formato de array de arrays para a exportação limpa do PapaParse
+            let csvRows = exportData.map(obj => window.headersGlobal.map(h => obj[h]));
+            csvRows.unshift(window.headersGlobal); // Insere o cabeçalho
+            
+            const csv = Papa.unparse(csvRows);
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
