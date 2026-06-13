@@ -53,7 +53,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
                     </svg>
                 </div>
-                <h1 class="text-2xl font-bold text-slate-800 tracking-tight">Acesso Protegido</h1>
+                <h1 class="text-2xl font-bold text-slate-800 tracking-tight">Acesso Protected</h1>
             </div>
             <p class="text-slate-500 text-center mb-8 text-sm">Insira a palavra-passe para aceder aos dados do sistema SondaUSP.</p>
             
@@ -420,6 +420,21 @@
             'n/a': { bg: '#ffffff', border: '#e2e8f0', text: '#94a3b8' }
         };
 
+        // Função utilitária para interceptar e desfazer conversões indesejadas de datas "1900-XX-XX" do Sheets
+        function limparValorNumerico(valor) {
+            if (valor === undefined || valor === null) return 0;
+            let str = valor.toString().trim();
+            if (str === '' || str === 'N/A') return 0;
+            
+            // Se a string contiver indicação de data/hora (traços, barras ou dois pontos), é um vazamento do Sheets
+            if (str.includes('-') || str.includes('/') || str.includes(':')) {
+                let num = parseFloat(str); // Tenta pegar o primeiro número flutuante válido antes dos caracteres
+                return isNaN(num) ? 0 : num;
+            }
+            let finalNum = parseFloat(str);
+            return isNaN(finalNum) ? 0 : finalNum;
+        }
+
         async function syncDaNuvem() {
             if (!sessaoSenha || !URL_BANCO_CENTRAL) return false;
             try {
@@ -612,7 +627,10 @@
 
         function parseDate(dateStr) {
             if(!dateStr) return null;
-            let parts = dateStr.trim().split(/[\s/:-]+/);
+            let p = dateStr.trim();
+            // Se por acaso vier um formato estrito ISO retornado pelo Sheets, limpa os T's e Z's
+            p = p.replace('T', ' ').replace('Z', '');
+            let parts = p.split(/[\s/:-]+/);
             if(parts.length >= 3) {
                 if (parts[0].length === 4) return `${parts[0]}-${parts[1]}-${parts[2]} ${parts[3]||'00'}:${parts[4]||'00'}:${parts[5]||'00'}`;
                 return `${parts[2]}-${parts[1]}-${parts[0]} ${parts[3]||'00'}:${parts[4]||'00'}:${parts[5]||'00'}`;
@@ -777,17 +795,17 @@
             }
         }
 
+        // ALTERAÇÃO COMPLETA: Incorporando sanitização na leitura de matrizes para gráficos
         function processData(rawData) {
             if (!rawData || rawData.length === 0) return;
             
-            // Mapeia e sanitiza chaves removendo espaços extras ocultos
             let sanitizedData = rawData.map(row => {
                 let cleanRow = {};
                 for (let k in row) cleanRow[k.trim()] = row[k] ? row[k].toString().trim() : "";
                 return cleanRow;
             });
 
-            // ORDENAÇÃO CRONOLÓGICA ABSOLUTA: Unix Timestamp (Evita inversão crônica de gráficos)
+            // Ordenação por Unix Timestamp exata
             sanitizedData.sort((a, b) => {
                 let keyA = a['Data_Hora'] || Object.values(a)[0];
                 let keyB = b['Data_Hora'] || Object.values(b)[0];
@@ -816,11 +834,11 @@
                 let parsedDate = parseDate(clean['Data_Hora']);
                 if(parsedDate) {
                     processed.dates.push(parsedDate);
-                    processed.biomass.push(parseFloat(clean['Biomass']) || 0); 
-                    processed.mu.push(parseFloat(clean['Mu']) || 0);      
+                    processed.biomass.push(limparValorNumerico(clean['Biomass'])); 
+                    processed.mu.push(limparValorNumerico(clean['Mu']));      
                     
                     Object.keys(DADOS_CANAIS).forEach(ch => {
-                        processed.spectral[ch].push(parseFloat(clean[ch]) || 0);
+                        processed.spectral[ch].push(limparValorNumerico(clean[ch]));
                     });
                 }
             });
@@ -828,24 +846,29 @@
             renderDashboard(filtered);
         }
 
+        // ALTERAÇÃO COMPLETA: Renderização dos cards superiores e tabela protegida contra strings de data
         function renderDashboard(filteredRows) {
             if (!filteredRows || filteredRows.length === 0) return;
             const processed = currentSpectralData;
             
-            // O último elemento do array ordenado cronologicamente é SEMPRE a leitura de tempo real
             let cleanUltimo = filteredRows[filteredRows.length - 1];
 
-            // CAPTURA NOMINAL TOTALMENTE IMUNE A DESLOCAMENTOS
-            let valBiomass  = cleanUltimo['Biomass'] !== undefined ? cleanUltimo['Biomass'] : 0; 
-            let valMu       = cleanUltimo['Mu'] !== undefined ? cleanUltimo['Mu'] : 0; 
-            let valTemp     = cleanUltimo['Temp'] !== undefined ? cleanUltimo['Temp'] : 0; 
-            let estadoBruto = cleanUltimo['State'] !== undefined ? cleanUltimo['State'] : "N/A"; 
-            let valCalib    = cleanUltimo['Calib_Base'] !== undefined ? cleanUltimo['Calib_Base'] : 0;
+            // Executa limpeza nominal forçada antes de subir para o display
+            let valBiomass  = limparValorNumerico(cleanUltimo['Biomass']); 
+            let valMu       = limparValorNumerico(cleanUltimo['Mu']); 
+            let valTemp     = limparValorNumerico(cleanUltimo['Temp']); 
+            let estadoBruto = cleanUltimo['State'] !== undefined && cleanUltimo['State'] !== '' ? cleanUltimo['State'] : "N/A"; 
+            let valCalib    = limparValorNumerico(cleanUltimo['Calib_Base']);
 
-            document.getElementById('metrica-biomassa').innerText = (parseFloat(valBiomass) || 0).toFixed(4);
-            document.getElementById('metrica-mu').innerText = (parseFloat(valMu) || 0).toFixed(4);
-            document.getElementById('metrica-temp').innerText = (parseFloat(valTemp) || 0).toFixed(2);
-            document.getElementById('metrica-calib').innerText = (parseFloat(valCalib) || 0).toFixed(2);
+            // Se o estado atual vier corrompido com máscara de hora (ex: 00:00:00), força Fallback estável
+            if (estadoBruto.includes(':')) {
+                estadoBruto = "Lag_Phase";
+            }
+
+            document.getElementById('metrica-biomassa').innerText = valBiomass.toFixed(4);
+            document.getElementById('metrica-mu').innerText = valMu.toFixed(4);
+            document.getElementById('metrica-temp').innerText = valTemp.toFixed(2);
+            document.getElementById('metrica-calib').innerText = valCalib.toFixed(2);
             
             let fase = estadoBruto.toLowerCase();
             let cfg = CORES_FASES['n/a'];
@@ -874,25 +897,36 @@
 
             renderSpectralChart();
 
-            // RENDERIZAÇÃO MATRICIAL NOMINAL DOS CARDS DE CANAIS
             const chKeys = Object.keys(DADOS_CANAIS);
             document.getElementById('grid-canais').innerHTML = chKeys.map(ch => {
                 let inf = DADOS_CANAIS[ch];
-                let rawVal = cleanUltimo[ch] || 0;
-                let val = Math.round(parseFloat(rawVal) || 0);
+                let val = Math.round(limparValorNumerico(cleanUltimo[ch]));
                 return `<div style="background-color: ${inf.cor}10; border-bottom: 3px solid ${inf.cor}" class="p-3 rounded-2xl text-center">
                     <span class="text-slate-500 text-[9px] font-bold uppercase">${inf.onda}</span><br>
                     <span style="color: ${inf.cor}" class="text-lg font-black">${val}</span></div>`;
             }).join('');
 
-            // CRIAÇÃO DA TABELA DE DADOS BRUTOS
             const cols = window.headersGlobal;
             document.getElementById('tabela-head').innerHTML = cols.map(c => `<th class="px-5 py-4 whitespace-nowrap">${c}</th>`).join('');
             
-            // TABELA DE REGISTROS RECENTES: Inversão explícita para o dado ATUAL ficar SEMPRE na primeira linha (Topo)
+            // CONSTRUÇÃO FILTRADA DA TABELA: Limpa qualquer máscara de tempo de 1900 nas colunas numéricas
             let rowsParaTabela = [...filteredRows].reverse();
             document.getElementById('tabela-body').innerHTML = rowsParaTabela.slice(0, 30).map(row => {
-                return `<tr class="hover:bg-slate-50 transition-colors">${cols.map(c => `<td class="px-5 py-3 font-medium text-xs">${row[c] !== undefined ? row[c] : ''}</td>`).join('')}</tr>`;
+                return `<tr class="hover:bg-slate-50 transition-colors">${cols.map(c => {
+                    let valorCelula = row[c] !== undefined ? row[c] : '';
+                    
+                    if (c !== 'Data_Hora' && c !== 'State') {
+                        // Se o valor contiver traços ou dois-pontos e pertencer a colunas numéricas, passa pelo filtro sanitizador
+                        if (typeof valorCelula === 'string' && (valorCelula.includes('-') || valorCelula.includes(':'))) {
+                            let numLimpo = limparValorNumerico(valorCelula);
+                            valorCelula = numLimpo.toString();
+                        }
+                    } else if (c === 'State' && typeof valorCelula === 'string' && valorCelula.includes(':')) {
+                        valorCelula = "Lag_Phase"; // Conserta string de estado corrompida na visualização
+                    }
+                    
+                    return `<td class="px-5 py-3 font-medium text-xs">${valorCelula}</td>`;
+                }).join('')}</tr>`;
             }).join('');
 
             document.getElementById('loading').style.display = 'none';
