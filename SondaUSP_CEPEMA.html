@@ -780,17 +780,19 @@
         function processData(rawData) {
             if (!rawData || rawData.length === 0) return;
             
-            // CRÍTICO: Mapeia e sanitiza chaves removendo espaços extras
+            // Mapeia e sanitiza chaves removendo espaços extras ocultos
             let sanitizedData = rawData.map(row => {
                 let cleanRow = {};
                 for (let k in row) cleanRow[k.trim()] = row[k] ? row[k].toString().trim() : "";
                 return cleanRow;
             });
 
-            // CRÍTICO: Ordenação Cronológica Rigorosa por Unix Timestamp (Garante passado -> presente nos gráficos)
+            // ORDENAÇÃO CRONOLÓGICA ABSOLUTA: Unix Timestamp (Evita inversão crônica de gráficos)
             sanitizedData.sort((a, b) => {
-                let timeA = new Date(parseDate(a['Data_Hora'] || Object.values(a)[0]).replace(/-/g, '/')).getTime() || 0;
-                let timeB = new Date(parseDate(b['Data_Hora'] || Object.values(b)[0]).replace(/-/g, '/')).getTime() || 0;
+                let keyA = a['Data_Hora'] || Object.values(a)[0];
+                let keyB = b['Data_Hora'] || Object.values(b)[0];
+                let timeA = new Date(parseDate(keyA).replace(/-/g, '/')).getTime() || 0;
+                let timeB = new Date(parseDate(keyB).replace(/-/g, '/')).getTime() || 0;
                 return timeA - timeB;
             });
 
@@ -830,10 +832,10 @@
             if (!filteredRows || filteredRows.length === 0) return;
             const processed = currentSpectralData;
             
-            // O último elemento do array ordenado cronologicamente é SEMPRE o mais recente
+            // O último elemento do array ordenado cronologicamente é SEMPRE a leitura de tempo real
             let cleanUltimo = filteredRows[filteredRows.length - 1];
 
-            // LEITURA ESTREITA VIA PROPRIEDADES DE OBJETO NOMINAL
+            // CAPTURA NOMINAL TOTALMENTE IMUNE A DESLOCAMENTOS
             let valBiomass  = cleanUltimo['Biomass'] !== undefined ? cleanUltimo['Biomass'] : 0; 
             let valMu       = cleanUltimo['Mu'] !== undefined ? cleanUltimo['Mu'] : 0; 
             let valTemp     = cleanUltimo['Temp'] !== undefined ? cleanUltimo['Temp'] : 0; 
@@ -872,7 +874,7 @@
 
             renderSpectralChart();
 
-            // SENSOR FOTÔNICO VIA EXTRAÇÃO DE CHAVE NOMINAL DO OBJETO
+            // RENDERIZAÇÃO MATRICIAL NOMINAL DOS CARDS DE CANAIS
             const chKeys = Object.keys(DADOS_CANAIS);
             document.getElementById('grid-canais').innerHTML = chKeys.map(ch => {
                 let inf = DADOS_CANAIS[ch];
@@ -883,10 +885,11 @@
                     <span style="color: ${inf.cor}" class="text-lg font-black">${val}</span></div>`;
             }).join('');
 
+            // CRIAÇÃO DA TABELA DE DADOS BRUTOS
             const cols = window.headersGlobal;
             document.getElementById('tabela-head').innerHTML = cols.map(c => `<th class="px-5 py-4 whitespace-nowrap">${c}</th>`).join('');
             
-            // TABELA DE REGISTROS RECENTES: Inverte explicitamente para colocar os dados atuais (mais novos) SEMPRE no TOPO da visualização
+            // TABELA DE REGISTROS RECENTES: Inversão explícita para o dado ATUAL ficar SEMPRE na primeira linha (Topo)
             let rowsParaTabela = [...filteredRows].reverse();
             document.getElementById('tabela-body').innerHTML = rowsParaTabela.slice(0, 30).map(row => {
                 return `<tr class="hover:bg-slate-50 transition-colors">${cols.map(c => `<td class="px-5 py-3 font-medium text-xs">${row[c] !== undefined ? row[c] : ''}</td>`).join('')}</tr>`;
