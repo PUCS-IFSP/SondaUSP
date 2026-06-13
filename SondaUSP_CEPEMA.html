@@ -389,27 +389,22 @@
         let refreshIntervalId = null;
         let dashboardLoaded = false;
         let currentSpectralData = null;
-
-        // MAPEAMENTO DA ASSINATURA ESPECTRAL ATUALIZADO PARA OS 14 CANAIS DO AS7343
+// MAPEAMENTO DA ASSINATURA ESPECTRAL DO AS7343 EM MAIÚSCULAS (13 CANAIS DE TRANSMISSÃO)
         const DADOS_CANAIS = {
             'F1': {onda: '405nm', peak: 405, sigma: 10, cor: '#4f46e5', dash: 'solid'},
             'F2': {onda: '425nm', peak: 425, sigma: 10, cor: '#4338ca', dash: 'solid'},
-            'F3': {onda: '450nm', peak: 450, sigma: 12, cor: '#2563eb', dash: 'solid'},
-            'F4': {onda: '475nm', peak: 475, sigma: 12, cor: '#0284c7', dash: 'solid'},
-            'F5': {onda: '510nm', peak: 510, sigma: 12, cor: '#059669', dash: 'solid'},
-            'F6': {onda: '545nm', peak: 545, sigma: 12, cor: '#16a34a', dash: 'solid'},
-            'F7': {onda: '570nm', peak: 570, sigma: 12, cor: '#ca8a04', dash: 'solid'},
-            'F8': {onda: '600nm', peak: 600, sigma: 15, cor: '#ea580c', dash: 'solid'},
-            'F9': {onda: '630nm', peak: 630, sigma: 15, cor: '#dc2626', dash: 'solid'},
-            'F10': {onda: '670nm', peak: 670, sigma: 15, cor: '#b91c1c', dash: 'solid'},
-            'F11': {onda: '710nm', peak: 710, sigma: 15, cor: '#991b1b', dash: 'solid'},
-            'F12': {onda: '760nm', peak: 760, sigma: 15, cor: '#7f1d1d', dash: 'solid'},
-            'F13': {onda: '810nm', peak: 810, sigma: 20, cor: '#6b21a8', dash: 'solid'},
-            'F14': {onda: '860nm', peak: 860, sigma: 20, cor: '#581c87', dash: 'solid'},
-            'clr': {onda: 'Clear', peak: 650, sigma: 250, cor: '#475569', dash: 'dash'},
-            'nir': {onda: 'NIR', peak: 910, sigma: 40, cor: '#0f172a', dash: 'solid'}
+            'FZ': {onda: '450nm', peak: 450, sigma: 12, cor: '#2563eb', dash: 'solid'},
+            'F3': {onda: '475nm', peak: 475, sigma: 12, cor: '#0284c7', dash: 'solid'},
+            'F4': {onda: '510nm', peak: 510, sigma: 12, cor: '#059669', dash: 'solid'},
+            'FY': {onda: '545nm', peak: 545, sigma: 12, cor: '#16a34a', dash: 'solid'},
+            'F5': {onda: '570nm', peak: 570, sigma: 12, cor: '#ca8a04', dash: 'solid'},
+            'FXL': {onda: '600nm', peak: 600, sigma: 15, cor: '#ea580c', dash: 'solid'},
+            'F6': {onda: '630nm', peak: 630, sigma: 15, cor: '#dc2626', dash: 'solid'},
+            'F7': {onda: '670nm', peak: 670, sigma: 15, cor: '#b91c1c', dash: 'solid'},
+            'F8': {onda: '710nm', peak: 710, sigma: 15, cor: '#991b1b', dash: 'solid'},
+            'FNI': {onda: 'NIR', peak: 855, sigma: 40, cor: '#475569', dash: 'solid'},
+            'CLR': {onda: 'Clear', peak: 600, sigma: 250, cor: '#94a3b8', dash: 'dash'}
         };
-
         const CORES_FASES = {
             'Lag_Phase': { bg: '#f0f9ff', border: '#bae6fd', text: '#0284c7' },
             'Log_Phase': { bg: '#f0fdf4', border: '#bbf7d0', text: '#16a34a' },
@@ -847,7 +842,8 @@
                 });
                 
                 // ORDEM EXPANDIDA PARA RENDERIZAÇÃO DOS 14 CANAIS GAUSSIANOS DO SENSOR AS7343
-                const order = ['clr', 'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12', 'F13', 'F14', 'nir'];
+                //const order = ['clr', 'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12', 'F13', 'F14', 'nir'];
+                const ordemCanais = ['F1', 'F2', 'FZ', 'F3', 'F4', 'FY', 'F5', 'FXL', 'F6', 'F7', 'F8', 'FNI', 'CLR'];
                 let traces = order.map(ch => {
                     const info = DADOS_CANAIS[ch];
                     const amplitude = latest[ch] || 0.1;
