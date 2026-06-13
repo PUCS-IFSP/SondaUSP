@@ -245,8 +245,7 @@
                 <details class="mb-8 bg-white border border-slate-200 rounded-2xl overflow-hidden group shadow-sm" open>
                     <summary class="cursor-pointer bg-slate-50 p-5 font-semibold text-slate-700 hover:bg-slate-100 transition-all list-none flex justify-between items-center">
                         Tabela de Registros Recentes
-                        <svg class="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                    </summary>
+                        <svg class="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></summary>
                     <div class="p-0 bg-white overflow-x-auto table-container border-t border-slate-200">
                         <table id="tabela-dados" class="w-full text-sm text-left">
                             <thead class="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold tracking-widest">
@@ -305,7 +304,7 @@
                     <div id="container-refresh-interval" class="hidden">
                         <label class="block text-sm font-semibold text-slate-700 mb-2">Intervalo de Atualização (Min)</label>
                         <input type="number" id="config-refresh-interval" class="w-full border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-usp-500 outline-none transition-all">
-                        <p class="text-[11px] text-slate-500 mt-2 leading-relaxed">Frequência em que os dados serão atualizados na tela.</p>
+                        <p class="text-[11px] text-slate-500 mt-2 leading-relaxed">Frequência em que os dados serão updated na tela.</p>
                     </div>
                 </div>
 
@@ -396,7 +395,6 @@
         let dashboardLoaded = false;
         let currentSpectralData = null;
 
-        // ESTRUTURA OFICIAL DE COLUNAS DA PLANILHA (19 COLUNAS BRINDADAS)
         const ORDEM_ESTRUTURAL_COLUNAS = [
             'Data_Hora', 'Biomass', 'Mu', 'Temp', 'State', 'Calib_Base', 
             'F1', 'F2', 'FZ', 'F3', 'F4', 'FY', 'F5', 'FXL', 'F6', 'F7', 'F8', 'FNI', 'CLR'
@@ -425,20 +423,46 @@
             'n/a': { bg: '#ffffff', border: '#e2e8f0', text: '#94a3b8' }
         };
 
-        // FILTRO DE HIGIENIZAÇÃO ABSOLUTO CONTRA VAZAMENTO DE TEXTOS DE DATA NAS COLUNAS NUMÉRICAS
+        // PROTEÇÃO TOTAL: Tratamento estrito contra números contendo vírgula decimal regional e filtragem anti-data
         function extrairValorNumericoPuro(valor, chaveColuna) {
             if (valor === undefined || valor === null) return 0;
             let str = valor.toString().trim();
             if (str === '' || str === 'N/A') return 0;
 
-            // Se o Sheets injetar uma string de data por engano em Biomass, Temp ou F1-F8, o filtro detecta e isola
+            // Se vier formato europeu/brasileiro (ex: "25,5000"), normaliza para o padrão americano de float ("25.5000")
+            if (str.includes(',') && !str.includes('"')) {
+                str = str.replace(',', '.');
+            }
+
+            // Se o dado bruto conter máscaras de tempo, isola o resíduo numérico inicial válido
             if (str.includes('-') || str.includes(':') || str.includes('/') || str.match(/[a-zA-Z]/)) {
                 let numExtraido = parseFloat(str);
-                if (!isNaN(numExtraido) && numExtraido > 0 && numExtraido < 200) return numExtraido;
-                return (chaveColuna === 'Temp') ? 24.0 : 0; 
+                if (!isNaN(numExtraido) && numExtraido > 0 && numExtraido < 20000) return numExtraido;
+                return (chaveColuna === 'Temp') ? 25.5 : 0; 
             }
             let finalNum = parseFloat(str);
             return isNaN(finalNum) ? 0 : finalNum;
+        }
+
+        // Tokenizador CSV de alta precisão contra quebras erradas geradas por células com aspas ou vírgulas locais
+        function tokenizarLinhaCSV(linhaTexto) {
+            let resultado = [];
+            let dentroDeAspas = false;
+            let tokenAtual = '';
+            
+            for (let i = 0; i < linhaTexto.length; i++) {
+                let caractere = linhaTexto[i];
+                if (caractere === '"') {
+                    dentroDeAspas = !dentroDeAspas;
+                } else if (caractere === ',' && !dentroDeAspas) {
+                    resultado.push(tokenAtual.replace(/^"|"$/g, '').trim());
+                    tokenAtual = '';
+                } else {
+                    tokenAtual += caractere;
+                }
+            }
+            resultado.push(tokenAtual.replace(/^"|"$/g, '').trim());
+            return resultado;
         }
 
         async function syncDaNuvem() {
@@ -576,7 +600,6 @@
             if(!dateStr) return "";
             let p = dateStr.toString().trim().replace('T', ' ').replace('Z', '');
             if (p.includes('GMT')) {
-                // Trata strings de datas nativas longas geradas por navegadores ou pelo Sheets
                 let d = new Date(p);
                 if (!isNaN(d.getTime())) {
                     return d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2) + " " + ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2) + ":" + ("0" + d.getSeconds()).slice(-2);
@@ -615,29 +638,26 @@
                 const response = await fetch(`${activeSensorId}?senha=${encodeURIComponent(sessaoSenha)}&_t=${Date.now()}`);
                 const csvText = await response.text();
                 
-                Papa.parse(csvText, {
-                    header: false, // Forçamos leitura indexada para anular desarranjos de cabeçalho do Sheets
-                    skipEmptyLines: true,
-                    complete: (res) => {
-                        if (res.data && res.data.length > 1) {
-                            let rawCabecalhos = res.data[0].map(h => h.toString().trim());
-                            
-                            // Cria mapeamento matricial indexado dinâmico independente de ordem
-                            let dadosMapeados = [];
-                            for(let i = 1; i < res.data.length; i++) {
-                                let row = res.data[i];
-                                let objItem = {};
-                                ORDEM_ESTRUTURAL_COLUNAS.forEach(col => {
-                                    let idxPlanilha = rawCabecalhos.findIndex(h => h.toLowerCase() === col.toLowerCase());
-                                    objItem[col] = (idxPlanilha !== -1 && row[idxPlanilha] !== undefined) ? row[idxPlanilha].toString().trim() : "";
-                                });
-                                dadosMapeados.push(objItem);
-                            }
-                            window.headersGlobal = ORDEM_ESTRUTURAL_COLUNAS;
-                            processData(dadosMapeados);
-                        } else { document.getElementById('loading').innerHTML = "<p class='text-red-500'>Planilha sem dados acumulados.</p>"; }
+                // Divisão das linhas bruta contendo normalização de quebra
+                let linhasBrutas = csvText.split(/\r?\n/);
+                if (linhasBrutas.length > 1) {
+                    let rawCabecalhos = tokenizarLinhaCSV(linhasBrutas[0]).map(h => h.trim());
+                    
+                    let dadosMapeados = [];
+                    for(let i = 1; i < linhasBrutas.length; i++) {
+                        if (linhasBrutas[i].trim() === '') continue;
+                        let rowTokens = tokenizarLinhaCSV(linhasBrutas[i]);
+                        let objItem = {};
+                        
+                        ORDEM_ESTRUTURAL_COLUNAS.forEach(col => {
+                            let idxPlanilha = rawCabecalhos.findIndex(h => h.toLowerCase() === col.toLowerCase());
+                            objItem[col] = (idxPlanilha !== -1 && rowTokens[idxPlanilha] !== undefined) ? rowTokens[idxPlanilha].trim() : "";
+                        });
+                        dadosMapeados.push(objItem);
                     }
-                });
+                    window.headersGlobal = ORDEM_ESTRUTURAL_COLUNAS;
+                    processData(dadosMapeados);
+                } else { document.getElementById('loading').innerHTML = "<p class='text-red-500'>Planilha vazia ou desalinhada.</p>"; }
             } catch (err) { document.getElementById('loading').innerHTML = "<p class='text-red-500'>Erro ao conectar com o Servidor.</p>"; }
         }
 
@@ -652,13 +672,11 @@
                 try {
                     const res = await fetch(`${id}?senha=${encodeURIComponent(sessaoSenha)}&_t=${Date.now()}`);
                     const text = await res.text();
-                    if(text.includes(",")) {
-                        let lines = text.split("\n");
-                        if(lines.length > 1) {
-                            let lastRow = lines[lines.length-2].split(",");
-                            let parsed = parseDate(lastRow[0]);
-                            if(parsed && (new Date().getTime() - new Date(parsed.replace(/-/g, '/')).getTime()) < toleranceMinutes * 60000) { boxOnline = true; }
-                        }
+                    let lines = text.split(/\r?\n/);
+                    if(lines.length > 1) {
+                        let tokensUltima = tokenizarLinhaCSV(lines[lines.length-2]);
+                        let parsed = parseDate(tokensUltima[0]);
+                        if(parsed && (new Date().getTime() - new Date(parsed.replace(/-/g, '/')).getTime()) < toleranceMinutes * 60000) { boxOnline = true; }
                     }
                 } catch(e){}
                 boxOnline ? online++ : offline++;
@@ -668,7 +686,6 @@
         }
 
         function processData(sanitizedData) {
-            // Ordenação cronológica invariável por UNIX Timestamp
             sanitizedData.sort((a, b) => {
                 let timeA = new Date(parseDate(a['Data_Hora']).replace(/-/g, '/')).getTime() || 0;
                 let timeB = new Date(parseDate(b['Data_Hora']).replace(/-/g, '/')).getTime() || 0;
@@ -709,7 +726,6 @@
             const processed = currentSpectralData;
             let cleanUltimo = filteredRows[filteredRows.length - 1];
 
-            // Injeção direta nos mostradores numéricos com higienização estrita anti-data
             let valBiomass  = extrairValorNumericoPuro(cleanUltimo['Biomass'], 'Biomass');
             let valMu       = extrairValorNumericoPuro(cleanUltimo['Mu'], 'Mu');
             let valTemp     = extrairValorNumericoPuro(cleanUltimo['Temp'], 'Temp');
@@ -747,7 +763,6 @@
 
             renderSpectralChart();
 
-            // Cards de canais espectrais fotônicos isolados
             document.getElementById('grid-canais').innerHTML = Object.keys(DADOS_CANAIS).map(ch => {
                 let inf = DADOS_CANAIS[ch];
                 let val = Math.round(extrairValorNumericoPuro(cleanUltimo[ch], ch));
@@ -756,7 +771,6 @@
                     <span style="color: ${inf.cor}" class="text-lg font-black">${val}</span></div>`;
             }).join('');
 
-            // TABELA DE REGISTROS RECENTES TOTALMENTE HIGIENIZADA
             const cols = window.headersGlobal;
             document.getElementById('tabela-head').innerHTML = cols.map(c => `<th class="px-5 py-4 whitespace-nowrap">${c}</th>`).join('');
             
@@ -769,7 +783,6 @@
                     } else if (c === 'State') {
                         if (valorCelula.includes(':') || valorCelula.includes('-')) valorCelula = "Lag_Phase";
                     } else {
-                        // Limpa strings residuais de data vazadas do Sheets para as células numéricas na tabela
                         let floatLimpo = extrairValorNumericoPuro(valorCelula, c);
                         valorCelula = (c === 'Temp' || c === 'Calib_Base') ? floatLimpo.toFixed(2) : (c === 'Biomass' || c === 'Mu' ? floatLimpo.toFixed(4) : Math.round(floatLimpo));
                     }
