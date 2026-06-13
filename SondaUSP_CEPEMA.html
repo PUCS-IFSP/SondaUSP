@@ -55,7 +55,7 @@
                 </div>
                 <h1 class="text-2xl font-bold text-slate-800 tracking-tight">Acesso Protegido</h1>
             </div>
-            <p class="text-slate-500 text-center mb-8 text-sm">Insira a palavra-passe para aceder aos dados do system SondaUSP.</p>
+            <p class="text-slate-500 text-center mb-8 text-sm">Insira a palavra-passe para aceder aos dados do sistema SondaUSP.</p>
             
             <div class="mb-5">
                 <input type="password" id="input-senha" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 focus:outline-none focus:ring-2 focus:ring-usp-500 focus:border-usp-500 transition-all" placeholder="Palavra-passe" onkeypress="if(event.key === 'Enter') realizarLogin()">
@@ -127,7 +127,7 @@
                 </div>
                 <div class="card-gradient-3 p-8 rounded-3xl border border-yellow-100 shadow-sm">
                     <div class="w-12 h-12 bg-yellow-500 text-white rounded-xl flex items-center justify-center mb-6 shadow-md">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 options 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
                     </div>
                     <h3 class="text-xl font-bold text-slate-900 mb-3">Filtro de Kalman Extended</h3>
                     <p class="text-slate-600 text-sm leading-relaxed">A fusão de dados sensoriais filtra ruídos operacionais e estima dinamicamente a Biomassa (g/L) e a Taxa de Crescimento Específica (μ).</p>
@@ -242,7 +242,7 @@
                         Baixar Planilha (CSV)
                     </button>
                 </div>
-                <details class="mb-8 bg-white border border-slate-200 rounded-2xl overflow-hidden group shadow-sm">
+                <details class="mb-8 bg-white border border-slate-200 rounded-2xl overflow-hidden group shadow-sm" open>
                     <summary class="cursor-pointer bg-slate-50 p-5 font-semibold text-slate-700 hover:bg-slate-100 transition-all list-none flex justify-between items-center">
                         Tabela de Registros Recentes
                         <svg class="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
@@ -602,7 +602,7 @@
                      showModal({ title: 'Erro', message: 'Houve um erro ao gravar na nuvem.', type: 'alert' });
                 } else {
                     loadDashboardData(); startAutoRefresh();
-                    showModal({ title: 'Sucesso', message: 'Parâmetros globais updated com sucesso.', type: 'alert' });
+                    showModal({ title: 'Sucesso', message: 'Parâmetros globais atualizados com sucesso.', type: 'alert' });
                 }
             } catch (e) {
                 showModal({ title: 'Falha', message: 'Sem conexão com a nuvem.', type: 'alert' });
@@ -627,7 +627,7 @@
                 const date = new Date(now.getTime() - (i * 3600000));
                 
                 const row = {
-                    'Data_Hora': date.toLocaleString('pt-BR'),
+                    'Data_Hora': date.getFullYear() + "-" + ("0" + (date.getMonth() + 1)).slice(-2) + "-" + ("0" + date.getDate()).slice(-2) + " " + ("0" + date.getHours()).slice(-2) + ":" + ("0" + date.getMinutes()).slice(-2) + ":" + ("0" + date.getSeconds()).slice(-2),
                     'Biomass': (1.2 + Math.random() * 0.3).toFixed(4),
                     'Mu': (0.02 + Math.random() * 0.01).toFixed(4),
                     'Temp': (26 + Math.random()).toFixed(2),
@@ -650,7 +650,7 @@
                 mockRows.push(row);
             }
             window.headersGlobal = ['Data_Hora', 'Biomass', 'Mu', 'Temp', 'State', 'Calib_Base', 'F1', 'F2', 'FZ', 'F3', 'F4', 'FY', 'F5', 'FXL', 'F6', 'F7', 'F8', 'FNI', 'CLR'];
-            processData(mockRows.reverse());
+            processData(mockRows);
             switchView('dashboard');
         }
 
@@ -755,7 +755,7 @@
                                     for (let k in last) cleanLast[k.trim()] = last[k];
                                     
                                     let keys = Object.keys(cleanLast);
-                                    let parsed = parseDate(cleanLast[keys[0]]);
+                                    let parsed = parseDate(cleanLast['Data_Hora'] || cleanLast[keys[0]]);
                                     if(parsed) {
                                         let time = new Date(parsed.replace(/-/g, '/')).getTime();
                                         if(!isNaN(time) && (new Date().getTime() - time) < toleranceMinutes * 60000) {
@@ -779,50 +779,47 @@
 
         function processData(rawData) {
             if (!rawData || rawData.length === 0) return;
-            window.currentRawData = rawData;
+            
+            // CRÍTICO: Mapeia e sanitiza chaves removendo espaços extras
+            let sanitizedData = rawData.map(row => {
+                let cleanRow = {};
+                for (let k in row) cleanRow[k.trim()] = row[k] ? row[k].toString().trim() : "";
+                return cleanRow;
+            });
+
+            // CRÍTICO: Ordenação Cronológica Rigorosa por Unix Timestamp (Garante passado -> presente nos gráficos)
+            sanitizedData.sort((a, b) => {
+                let timeA = new Date(parseDate(a['Data_Hora'] || Object.values(a)[0]).replace(/-/g, '/')).getTime() || 0;
+                let timeB = new Date(parseDate(b['Data_Hora'] || Object.values(b)[0]).replace(/-/g, '/')).getTime() || 0;
+                return timeA - timeB;
+            });
+
+            window.currentRawData = sanitizedData;
+
             let now = new Date().getTime();
             let limitMs = diasVis * 24 * 60 * 60 * 1000;
             
-            let filtered = rawData.filter(row => {
-                let cleanRow = {};
-                for (let k in row) cleanRow[k.trim()] = row[k];
-                let chaves = Object.keys(cleanRow);
-                let parsed = parseDate(cleanRow[chaves[0]]);
+            let filtered = sanitizedData.filter(row => {
+                let parsed = parseDate(row['Data_Hora'] || Object.values(row)[0]);
                 if(!parsed) return false;
                 let rowTime = new Date(parsed.replace(/-/g, '/')).getTime();
                 return !isNaN(rowTime) && (now - rowTime) <= limitMs;
             });
-            if (filtered.length === 0) filtered = rawData.slice(-60);
+            if (filtered.length === 0) filtered = sanitizedData.slice(-60);
 
             const processed = { dates: [], biomass: [], mu: [], spectral: {} };
             Object.keys(DADOS_CANAIS).forEach(ch => processed.spectral[ch] = []);
 
-            filtered.forEach(row => {
-                let clean = {}; 
-                for (let k in row) clean[k.trim()] = row[k] ? row[k].toString().trim() : "";
-                
+            filtered.forEach(clean => {
                 let parsedDate = parseDate(clean['Data_Hora']);
-                
                 if(parsedDate) {
                     processed.dates.push(parsedDate);
-                    
-                    // CAPTURA ESTREITA POR CHAVE NOMINAL DO CSV (Independente de ordem física)
                     processed.biomass.push(parseFloat(clean['Biomass']) || 0); 
                     processed.mu.push(parseFloat(clean['Mu']) || 0);      
                     
-                    processed.spectral['F1'].push(parseFloat(clean['F1']) || 0);  
-                    processed.spectral['F2'].push(parseFloat(clean['F2']) || 0);  
-                    processed.spectral['FZ'].push(parseFloat(clean['FZ']) || 0);  
-                    processed.spectral['F3'].push(parseFloat(clean['F3']) || 0);  
-                    processed.spectral['F4'].push(parseFloat(clean['F4']) || 0); 
-                    processed.spectral['FY'].push(parseFloat(clean['FY']) || 0); 
-                    processed.spectral['F5'].push(parseFloat(clean['F5']) || 0); 
-                    processed.spectral['FXL'].push(parseFloat(clean['FXL']) || 0);
-                    processed.spectral['F6'].push(parseFloat(clean['F6']) || 0); 
-                    processed.spectral['F7'].push(parseFloat(clean['F7']) || 0); 
-                    processed.spectral['F8'].push(parseFloat(clean['F8']) || 0); 
-                    processed.spectral['FNI'].push(parseFloat(clean['FNI']) || 0);
-                    processed.spectral['CLR'].push(parseFloat(clean['CLR']) || 0);
+                    Object.keys(DADOS_CANAIS).forEach(ch => {
+                        processed.spectral[ch].push(parseFloat(clean[ch]) || 0);
+                    });
                 }
             });
             currentSpectralData = processed;
@@ -833,17 +830,15 @@
             if (!filteredRows || filteredRows.length === 0) return;
             const processed = currentSpectralData;
             
-            let ultimoReal = filteredRows[filteredRows.length - 1];
-            
-            let cleanUltimo = {};
-            for (let k in ultimoReal) cleanUltimo[k.trim()] = ultimoReal[k] ? ultimoReal[k].toString().trim() : "";
+            // O último elemento do array ordenado cronologicamente é SEMPRE o mais recente
+            let cleanUltimo = filteredRows[filteredRows.length - 1];
 
-            // EXTRAÇÃO ESTÁVEL POR CABEÇALHOS NOMINAIS
-            let valBiomass  = cleanUltimo['Biomass'] || 0; 
-            let valMu       = cleanUltimo['Mu'] || 0; 
-            let valTemp     = cleanUltimo['Temp'] || 0; 
-            let estadoBruto = cleanUltimo['State'] || "N/A"; 
-            let valCalib    = cleanUltimo['Calib_Base'] || 0;
+            // LEITURA ESTREITA VIA PROPRIEDADES DE OBJETO NOMINAL
+            let valBiomass  = cleanUltimo['Biomass'] !== undefined ? cleanUltimo['Biomass'] : 0; 
+            let valMu       = cleanUltimo['Mu'] !== undefined ? cleanUltimo['Mu'] : 0; 
+            let valTemp     = cleanUltimo['Temp'] !== undefined ? cleanUltimo['Temp'] : 0; 
+            let estadoBruto = cleanUltimo['State'] !== undefined ? cleanUltimo['State'] : "N/A"; 
+            let valCalib    = cleanUltimo['Calib_Base'] !== undefined ? cleanUltimo['Calib_Base'] : 0;
 
             document.getElementById('metrica-biomassa').innerText = (parseFloat(valBiomass) || 0).toFixed(4);
             document.getElementById('metrica-mu').innerText = (parseFloat(valMu) || 0).toFixed(4);
@@ -877,7 +872,7 @@
 
             renderSpectralChart();
 
-            // RENDERIZAÇÃO NOMINAL DOS SENSORES FOTÔNICOS
+            // SENSOR FOTÔNICO VIA EXTRAÇÃO DE CHAVE NOMINAL DO OBJETO
             const chKeys = Object.keys(DADOS_CANAIS);
             document.getElementById('grid-canais').innerHTML = chKeys.map(ch => {
                 let inf = DADOS_CANAIS[ch];
@@ -891,11 +886,10 @@
             const cols = window.headersGlobal;
             document.getElementById('tabela-head').innerHTML = cols.map(c => `<th class="px-5 py-4 whitespace-nowrap">${c}</th>`).join('');
             
+            // TABELA DE REGISTROS RECENTES: Inverte explicitamente para colocar os dados atuais (mais novos) SEMPRE no TOPO da visualização
             let rowsParaTabela = [...filteredRows].reverse();
             document.getElementById('tabela-body').innerHTML = rowsParaTabela.slice(0, 30).map(row => {
-                let cleanRow = {};
-                for (let k in row) cleanRow[k.trim()] = row[k];
-                return `<tr class="hover:bg-slate-50 transition-colors">${cols.map(c => `<td class="px-5 py-3 font-medium text-xs">${cleanRow[c]||''}</td>`).join('')}</tr>`;
+                return `<tr class="hover:bg-slate-50 transition-colors">${cols.map(c => `<td class="px-5 py-3 font-medium text-xs">${row[c] !== undefined ? row[c] : ''}</td>`).join('')}</tr>`;
             }).join('');
 
             document.getElementById('loading').style.display = 'none';
@@ -1045,7 +1039,7 @@
                      showModal({ title: 'Erro', message: 'Erro ao gravar na nuvem.', type: 'alert' });
                 } else {
                     initSensorsDropdown(); renderManageList(); cancelEdit();
-                    showModal({ title: 'Sucesso', message: 'Biorreator updated com sucesso!', type: 'alert' });
+                    showModal({ title: 'Sucesso', message: 'Biorreator atualizado com sucesso!', type: 'alert' });
                     if(Object.keys(biorreatores).length === 1) activeSensorId = id;
                 }
             } catch (e) {
