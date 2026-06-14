@@ -8,7 +8,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.plotly.com/plotly-2.27.0.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2=family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <script>
         tailwind.config = {
@@ -248,9 +248,9 @@
                         <svg class="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></summary>
                     <div class="p-0 bg-white overflow-x-auto table-container border-t border-slate-200">
                         <table id="tabela-dados" class="w-full text-sm text-left">
-                            <head class="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold tracking-widest">
+                            <thead class="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold tracking-widest">
                                 <tr id="tabela-head"></tr>
-                            </head>
+                            </thead>
                             <tbody id="tabela-body" class="divide-y divide-slate-100 text-slate-600"></tbody>
                         </table>
                     </div>
@@ -400,7 +400,7 @@
             'F1', 'F2', 'FZ', 'F3', 'F4', 'FY', 'F5', 'FXL', 'F6', 'F7', 'F8', 'FNI', 'CLR'
         ];
 
-        // Mapeamento Completo com as 13 chaves do novo Sensor AS7343 em harmonia com o Datasheet
+        // Mapeamento Completo com as 13 chaves ópticas ativas do AS7343 em conformidade com o Datasheet
         const DADOS_CANAIS = {
             'F1':  {onda: 'F1 (405nm)',  peak: 405, sigma: 12, cor: '#4f46e5', dash: 'solid'},
             'F2':  {onda: 'F2 (425nm)',  peak: 425, sigma: 12, cor: '#4338ca', dash: 'solid'},
@@ -413,8 +413,8 @@
             'F6':  {onda: 'F6 (640nm)',  peak: 640, sigma: 16, cor: '#dc2626', dash: 'solid'},
             'F7':  {onda: 'F7 (690nm)',  peak: 690, sigma: 16, cor: '#b91c1c', dash: 'solid'},
             'F8':  {onda: 'F8 (745nm)',  peak: 745, sigma: 18, cor: '#7f1d1d', dash: 'solid'},
-            'FNI': {onda: 'NIR (855nm)', peak: 855, sigma: 30, cor: '#1e293b', dash: 'solid'}, // Corresponde ao NIR
-            'CLR': {onda: 'VIS (Clear)', peak: 560, sigma: 130, cor: '#64748b', dash: 'dash'}  // Corresponde ao VIS
+            'FNI': {onda: 'NIR (855nm)', peak: 855, sigma: 30, cor: '#1e293b', dash: 'solid'},
+            'CLR': {onda: 'VIS (Clear)', peak: 560, sigma: 130, cor: '#64748b', dash: 'dash'}
         };
 
         const CORES_FASES = {
@@ -451,7 +451,6 @@
             for (let i = 0; i < linhaTexto.length; i++) {
                 let caractere = linhaTexto[i];
                 if (caractere === '"') {
-                    insideQuoted = !dentroDeAspas;
                     dentroDeAspas = !dentroDeAspas;
                 } else if (caractere === ',' && !dentroDeAspas) {
                     resultado.push(tokenAtual.replace(/^"|"$/g, '').trim());
@@ -625,6 +624,7 @@
             processData(mockRows); switchView('dashboard');
         }
 
+        // ALTERAÇÃO CRÍTICA: Lógica estrita para detectar a planilha vazia/apenas cabeçalho e quebrar a tela infinita de loop
         async function loadDashboardData() {
             if (Object.keys(biorreatores).length === 0) { switchView('settings'); return; }
             if (!activeSensorId) activeSensorId = Object.values(biorreatores)[0];
@@ -637,26 +637,60 @@
                 const response = await fetch(`${activeSensorId}?senha=${encodeURIComponent(sessaoSenha)}&_t=${Date.now()}`);
                 const csvText = await response.text();
                 
-                let linesRaw = csvText.split(/\r?\n/);
-                if (linesRaw.length > 1) {
-                    let rawCabecalhos = tokenizarLinhaCSV(linesRaw[0]).map(h => h.trim());
-                    
-                    let dadosMapeados = [];
-                    for(let i = 1; i < linesRaw.length; i++) {
-                        if (linesRaw[i].trim() === '') continue;
-                        let rowTokens = tokenizarLinhaCSV(linesRaw[i]);
-                        let objItem = {};
-                        
-                        ORDEM_ESTRUTURAL_COLUNAS.forEach(col => {
-                            let idxPlanilha = rawCabecalhos.findIndex(h => h.toLowerCase() === col.toLowerCase());
-                            objItem[col] = (idxPlanilha !== -1 && rowTokens[idxPlanilha] !== undefined) ? rowTokens[idxPlanilha].trim() : "";
-                        });
-                        dadosMapeados.push(objItem);
-                    }
+                let linesRaw = csvText.split(/\r?\n/).filter(line => line.trim() !== '');
+                
+                // CASO DA PLANILHA LIMPA (Sem linhas de dados, apenas o cabeçalho)
+                if (linesRaw.length <= 1) {
                     window.headersGlobal = ORDEM_ESTRUTURAL_COLUNAS;
-                    processData(dadosMapeados);
-                } else { document.getElementById('loading').innerHTML = "<p class='text-red-500'>Planilha vazia ou desalinhada.</p>"; }
-            } catch (err) { document.getElementById('loading').innerHTML = "<p class='text-red-500'>Erro ao conectar com o Servidor.</p>"; }
+                    
+                    // Zera os cartões analíticos principais
+                    document.getElementById('metrica-biomassa').innerText = "0.0000";
+                    document.getElementById('metrica-mu').innerText = "0.0000";
+                    document.getElementById('metrica-temp').innerText = "0.00";
+                    document.getElementById('metrica-calib').innerText = "0.00";
+                    
+                    const mf = document.getElementById('metrica-fase');
+                    mf.innerText = "Sem Dados";
+                    mf.style.color = "#94a3b8";
+                    document.getElementById('card-fase').style.backgroundColor = "#ffffff";
+                    document.getElementById('card-fase').style.borderColor = "#e2e8f0";
+                    
+                    // Destrói os vestígios de gráficos antigos para limpar o canvas do Plotly
+                    Plotly.purge('grafico-cinetica');
+                    Plotly.purge('grafico-espectral');
+                    
+                    // Monta a estrutura da tabela
+                    document.getElementById('tabela-head').innerHTML = ORDEM_ESTRUTURAL_COLUNAS.map(c => `<th class="px-5 py-4 whitespace-nowrap">${c}</th>`).join('');
+                    document.getElementById('tabela-body').innerHTML = `<tr><td colspan="${ORDEM_ESTRUTURAL_COLUNAS.length}" class="px-5 py-8 text-center text-slate-400 italic font-medium">Nenhum registro encontrado. Aguardando transmissões do ESP32-C3...</td></tr>`;
+                    
+                    // Desliga o modo loading e destrava o painel limpo
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('dashboard-content').style.display = 'block';
+                    document.getElementById('rodape-data').innerText = `Atualizado (Vazio): ${new Date().toLocaleString('pt-BR')}`;
+                    dashboardLoaded = true;
+                    return;
+                }
+                
+                // CASO COM DADOS REAIS NA PLANILHA
+                let rawCabecalhos = tokenizarLinhaCSV(linesRaw[0]).map(h => h.trim());
+                let dadosMapeados = [];
+                
+                for(let i = 1; i < linesRaw.length; i++) {
+                    let rowTokens = tokenizarLinhaCSV(linesRaw[i]);
+                    let objItem = {};
+                    
+                    ORDEM_ESTRUTURAL_COLUNAS.forEach(col => {
+                        let idxPlanilha = rawCabecalhos.findIndex(h => h.toLowerCase() === col.toLowerCase());
+                        objItem[col] = (idxPlanilha !== -1 && rowTokens[idxPlanilha] !== undefined) ? rowTokens[idxPlanilha].trim() : "";
+                    });
+                    dadosMapeados.push(objItem);
+                }
+                window.headersGlobal = ORDEM_ESTRUTURAL_COLUNAS;
+                processData(dadosMapeados);
+
+            } catch (err) { 
+                document.getElementById('loading').innerHTML = "<p class='text-red-500 font-bold'>⚠️ Erro ao conectar ou processar dados da API do Biorreator.</p>"; 
+            }
         }
 
         async function updateFleetStatus() {
@@ -806,7 +840,6 @@
                 const wavelengths = []; for(let w = 380; w <= 900; w += 2) wavelengths.push(w);
                 const latest = {}; Object.keys(DADOS_CANAIS).forEach(ch => { const arr = data.spectral[ch]; latest[ch] = arr[arr.length - 1] || 0; });
                 
-                // Renderização estruturada seguindo as 13 chaves ópticas ativas do AS7343
                 let traces = ['F1', 'F2', 'FZ', 'F3', 'F4', 'FY', 'F5', 'FXL', 'F6', 'F7', 'F8', 'FNI', 'CLR'].map(ch => {
                     const info = DADOS_CANAIS[ch]; const amplitude = latest[ch] || 0.1;
                     const intensities = wavelengths.map(w => amplitude * Math.exp(-Math.pow(w - info.peak, 2) / (2 * Math.pow(info.sigma, 2))));
