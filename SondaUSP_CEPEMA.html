@@ -50,7 +50,7 @@
             <div class="flex items-center gap-4 mb-6 justify-center">
                 <div class="w-14 h-14 bg-usp-50 border border-usp-100 rounded-2xl flex items-center justify-center shadow-sm">
                     <svg style="width: 28px; height: 28px;" class="text-usp-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2-0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
                     </svg>
                 </div>
                 <h1 class="text-2xl font-bold text-slate-800 tracking-tight">Acesso Protegido</h1>
@@ -182,34 +182,34 @@
                     <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden">
                         <h4 class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Biomassa Estimada</h4>
                         <div class="flex items-baseline gap-1">
-                            <p id="metrica-biomassa" class="text-2xl font-extrabold text-slate-900">--</p>
+                            <p id="metrica-biomassa" class="text-2xl font-extrabold text-slate-900">0.0000</p>
                             <span class="text-slate-500 text-xs font-medium">g/L</span>
                         </div>
                     </div>
                     <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
                         <h4 class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Crescimento (μ)</h4>
                         <div class="flex items-baseline gap-1">
-                            <p id="metrica-mu" class="text-2xl font-extrabold text-slate-900">--</p>
+                            <p id="metrica-mu" class="text-2xl font-extrabold text-slate-900">0.0000</p>
                             <span class="text-slate-500 text-xs font-medium">h⁻¹</span>
                         </div>
                     </div>
                     <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
                         <h4 class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Temperatura</h4>
                         <div class="flex items-baseline gap-1">
-                            <p id="metrica-temp" class="text-2xl font-extrabold text-slate-900">--</p>
+                            <p id="metrica-temp" class="text-2xl font-extrabold text-slate-900">0.00</p>
                             <span class="text-slate-500 text-xs font-medium">°C</span>
                         </div>
                     </div>
                     <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
                         <h4 class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Linha de Base</h4>
                         <div class="flex items-baseline gap-1">
-                            <p id="metrica-calib" class="text-2xl font-extrabold text-slate-900">--</p>
+                            <p id="metrica-calib" class="text-2xl font-extrabold text-slate-900">0.00</p>
                             <span class="text-slate-500 text-xs font-medium">U.A.</span>
                         </div>
                     </div>
-                    <div class="p-5 rounded-2xl border text-left shadow-sm flex flex-col justify-between bg-white" id="card-fase">
+                    <div class="p-5 rounded-2xl border text-left shadow-sm flex flex-col justify-between bg-white" id="card-fase" style="background-color: #ffffff; border-color: #e2e8f0;">
                         <h4 class="text-slate-700 text-xs font-bold uppercase tracking-wider mb-2 opacity-80">Estado Atual</h4>
-                        <p id="metrica-fase" class="text-xl font-black text-slate-800 capitalize truncate">--</p>
+                        <p id="metrica-fase" class="text-xl font-black text-slate-400 capitalize truncate">Sem Dados</p>
                     </div>
                 </div>
 
@@ -400,7 +400,6 @@
             'F1', 'F2', 'FZ', 'F3', 'F4', 'FY', 'F5', 'FXL', 'F6', 'F7', 'F8', 'FNI', 'CLR'
         ];
 
-        // Mapeamento Completo com as 13 chaves ópticas ativas do AS7343 em conformidade com o Datasheet
         const DADOS_CANAIS = {
             'F1':  {onda: 'F1 (405nm)',  peak: 405, sigma: 12, cor: '#4f46e5', dash: 'solid'},
             'F2':  {onda: 'F2 (425nm)',  peak: 425, sigma: 12, cor: '#4338ca', dash: 'solid'},
@@ -444,6 +443,7 @@
         }
 
         function tokenizarLinhaCSV(linhaTexto) {
+            if (!linhaTexto) return [];
             let resultado = [];
             let dentroDeAspas = false;
             let tokenAtual = '';
@@ -624,7 +624,31 @@
             processData(mockRows); switchView('dashboard');
         }
 
-        // ALTERAÇÃO CRÍTICA: Lógica estrita para detectar a planilha vazia/apenas cabeçalho e quebrar a tela infinita de loop
+        function setViewToEmptyState() {
+            window.headersGlobal = ORDEM_ESTRUTURAL_COLUNAS;
+            document.getElementById('metrica-biomassa').innerText = "0.0000";
+            document.getElementById('metrica-mu').innerText = "0.0000";
+            document.getElementById('metrica-temp').innerText = "0.00";
+            document.getElementById('metrica-calib').innerText = "0.00";
+            
+            const mf = document.getElementById('metrica-fase');
+            mf.innerText = "Sem Dados"; mf.style.color = "#94a3b8";
+            document.getElementById('card-fase').style.backgroundColor = "#ffffff";
+            document.getElementById('card-fase').style.borderColor = "#e2e8f0";
+            
+            Plotly.purge('grafico-cinetica');
+            Plotly.purge('grafico-espectral');
+            
+            document.getElementById('grid-canais').innerHTML = '';
+            document.getElementById('tabela-head').innerHTML = ORDEM_ESTRUTURAL_COLUNAS.map(c => `<th class="px-5 py-4 whitespace-nowrap">${c}</th>`).join('');
+            document.getElementById('tabela-body').innerHTML = `<tr><td colspan="${ORDEM_ESTRUTURAL_COLUNAS.length}" class="px-5 py-8 text-center text-slate-400 italic font-medium">Nenhum registro encontrado. Planilha vazia ou aguardando calibração do ESP32-C3...</td></tr>`;
+            
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('dashboard-content').style.display = 'block';
+            document.getElementById('rodape-data').innerText = `Atualizado (Vazio): ${new Date().toLocaleString('pt-BR')}`;
+            dashboardLoaded = true;
+        }
+
         async function loadDashboardData() {
             if (Object.keys(biorreatores).length === 0) { switchView('settings'); return; }
             if (!activeSensorId) activeSensorId = Object.values(biorreatores)[0];
@@ -638,307 +662,7 @@
                 const csvText = await response.text();
                 
                 let linesRaw = csvText.split(/\r?\n/).filter(line => line.trim() !== '');
+                if (linesRaw.length <= 1) { setViewToEmptyState(); return; }
                 
-                // CASO DA PLANILHA LIMPA (Sem linhas de dados, apenas o cabeçalho)
-                if (linesRaw.length <= 1) {
-                    window.headersGlobal = ORDEM_ESTRUTURAL_COLUNAS;
-                    
-                    // Zera os cartões analíticos principais
-                    document.getElementById('metrica-biomassa').innerText = "0.0000";
-                    document.getElementById('metrica-mu').innerText = "0.0000";
-                    document.getElementById('metrica-temp').innerText = "0.00";
-                    document.getElementById('metrica-calib').innerText = "0.00";
-                    
-                    const mf = document.getElementById('metrica-fase');
-                    mf.innerText = "Sem Dados";
-                    mf.style.color = "#94a3b8";
-                    document.getElementById('card-fase').style.backgroundColor = "#ffffff";
-                    document.getElementById('card-fase').style.borderColor = "#e2e8f0";
-                    
-                    // Destrói os vestígios de gráficos antigos para limpar o canvas do Plotly
-                    Plotly.purge('grafico-cinetica');
-                    Plotly.purge('grafico-espectral');
-                    
-                    // Monta a estrutura da tabela
-                    document.getElementById('tabela-head').innerHTML = ORDEM_ESTRUTURAL_COLUNAS.map(c => `<th class="px-5 py-4 whitespace-nowrap">${c}</th>`).join('');
-                    document.getElementById('tabela-body').innerHTML = `<tr><td colspan="${ORDEM_ESTRUTURAL_COLUNAS.length}" class="px-5 py-8 text-center text-slate-400 italic font-medium">Nenhum registro encontrado. Aguardando transmissões do ESP32-C3...</td></tr>`;
-                    
-                    // Desliga o modo loading e destrava o painel limpo
-                    document.getElementById('loading').style.display = 'none';
-                    document.getElementById('dashboard-content').style.display = 'block';
-                    document.getElementById('rodape-data').innerText = `Atualizado (Vazio): ${new Date().toLocaleString('pt-BR')}`;
-                    dashboardLoaded = true;
-                    return;
-                }
-                
-                // CASO COM DADOS REAIS NA PLANILHA
                 let rawCabecalhos = tokenizarLinhaCSV(linesRaw[0]).map(h => h.trim());
-                let dadosMapeados = [];
-                
-                for(let i = 1; i < linesRaw.length; i++) {
-                    let rowTokens = tokenizarLinhaCSV(linesRaw[i]);
-                    let objItem = {};
-                    
-                    ORDEM_ESTRUTURAL_COLUNAS.forEach(col => {
-                        let idxPlanilha = rawCabecalhos.findIndex(h => h.toLowerCase() === col.toLowerCase());
-                        objItem[col] = (idxPlanilha !== -1 && rowTokens[idxPlanilha] !== undefined) ? rowTokens[idxPlanilha].trim() : "";
-                    });
-                    dadosMapeados.push(objItem);
-                }
-                window.headersGlobal = ORDEM_ESTRUTURAL_COLUNAS;
-                processData(dadosMapeados);
-
-            } catch (err) { 
-                document.getElementById('loading').innerHTML = "<p class='text-red-500 font-bold'>⚠️ Erro ao conectar ou processar dados da API do Biorreator.</p>"; 
-            }
-        }
-
-        async function updateFleetStatus() {
-            const grid = document.getElementById('fleet-grid'); if(!grid) return;
-            grid.innerHTML = ''; let online = 0, offline = 0;
-            const entries = Object.entries(biorreatores);
-            document.getElementById('fleet-total').innerText = entries.length;
-
-            for(let [nome, id] of entries) {
-                let boxOnline = false;
-                try {
-                    const res = await fetch(`${id}?senha=${encodeURIComponent(sessaoSenha)}&_t=${Date.now()}`);
-                    const text = await res.text();
-                    let lines = text.split(/\r?\n/);
-                    if(lines.length > 1) {
-                        let tokensUltima = tokenizarLinhaCSV(lines[lines.length-2]);
-                        let parsed = parseDate(tokensUltima[0]);
-                        if(parsed && (new Date().getTime() - new Date(parsed.replace(/-/g, '/')).getTime()) < toleranceMinutes * 60000) { boxOnline = true; }
-                    }
-                } catch(e){}
-                boxOnline ? online++ : offline++;
-                grid.innerHTML += `<div onclick="selectSensorFromFleet('${id}')" class="p-4 border rounded-2xl flex items-center justify-between cursor-pointer transition-all ${boxOnline?'bg-green-50 border-green-100 hover:bg-green-100':'bg-red-50 border-red-100 hover:bg-red-100'}"><span class="text-xs font-bold truncate text-slate-700">${nome}</span><span class="h-2 w-2 rounded-full ${boxOnline?'bg-green-500':'bg-red-500'}"></span></div>`;
-            }
-            document.getElementById('fleet-online').innerText = online; document.getElementById('fleet-offline').innerText = offline;
-        }
-
-        function processData(sanitizedData) {
-            sanitizedData.sort((a, b) => {
-                let timeA = new Date(parseDate(a['Data_Hora']).replace(/-/g, '/')).getTime() || 0;
-                let timeB = new Date(parseDate(b['Data_Hora']).replace(/-/g, '/')).getTime() || 0;
-                return timeA - timeB;
-            });
-
-            window.currentRawData = sanitizedData;
-            let now = new Date().getTime(); let limitMs = diasVis * 24 * 60 * 60 * 1000;
-            
-            let filtered = sanitizedData.filter(row => {
-                let parsed = parseDate(row['Data_Hora']);
-                if(!parsed) return false;
-                let rowTime = new Date(parsed.replace(/-/g, '/')).getTime();
-                return !isNaN(rowTime) && (now - rowTime) <= limitMs;
-            });
-            if (filtered.length === 0) filtered = sanitizedData.slice(-60);
-
-            const processed = { dates: [], biomass: [], mu: [], spectral: {} };
-            Object.keys(DADOS_CANAIS).forEach(ch => processed.spectral[ch] = []);
-
-            filtered.forEach(clean => {
-                let parsedDate = parseDate(clean['Data_Hora']);
-                if(parsedDate) {
-                    processed.dates.push(parsedDate);
-                    processed.biomass.push(extrairValorNumericoPuro(clean['Biomass'], 'Biomass')); 
-                    processed.mu.push(extrairValorNumericoPuro(clean['Mu'], 'Mu'));      
-                    Object.keys(DADOS_CANAIS).forEach(ch => {
-                        processed.spectral[ch].push(extrairValorNumericoPuro(clean[ch], ch));
-                    });
-                }
-            });
-            currentSpectralData = processed;
-            renderDashboard(filtered);
-        }
-
-        function renderDashboard(filteredRows) {
-            if (!filteredRows || filteredRows.length === 0) return;
-            const processed = currentSpectralData;
-            let cleanUltimo = filteredRows[filteredRows.length - 1];
-
-            let valBiomass  = extrairValorNumericoPuro(cleanUltimo['Biomass'], 'Biomass');
-            let valMu       = extrairValorNumericoPuro(cleanUltimo['Mu'], 'Mu');
-            let valTemp     = extrairValorNumericoPuro(cleanUltimo['Temp'], 'Temp');
-            let valCalib    = extrairValorNumericoPuro(cleanUltimo['Calib_Base'], 'Calib_Base');
-            let estadoBruto = cleanUltimo['State'] || "Lag_Phase";
-
-            if (estadoBruto.includes(':') || estadoBruto.includes('-')) estadoBruto = "Lag_Phase";
-
-            document.getElementById('metrica-biomassa').innerText = valBiomass.toFixed(4);
-            document.getElementById('metrica-mu').innerText = valMu.toFixed(4);
-            document.getElementById('metrica-temp').innerText = valTemp.toFixed(2);
-            document.getElementById('metrica-calib').innerText = valCalib.toFixed(2);
-            
-            let fase = estadoBruto.toLowerCase(); let cfg = CORES_FASES['n/a'];
-            if (fase.includes('lag')) cfg = CORES_FASES['lag_phase'];
-            else if (fase.includes('log')) cfg = CORES_FASES['log_phase'];
-            else if (fase.includes('station')) cfg = CORES_FASES['stationary'];
-            else if (fase.includes('death')) cfg = CORES_FASES['death_phase'];
-            
-            const mf = document.getElementById('metrica-fase');
-            mf.innerText = estadoBruto.replace(/_/g, ' '); mf.style.color = cfg.text;
-            document.getElementById('card-fase').style.backgroundColor = cfg.bg;
-            document.getElementById('card-fase').style.borderColor = cfg.border;
-
-            Plotly.newPlot('grafico-cinetica', [
-                { x: processed.dates, y: processed.biomass, name: 'Biomassa', type: 'scatter', mode: 'lines', line: {color: cfg.text, width: 3, shape: 'spline'}, fill: 'tozeroy', fillcolor: cfg.text + '10' },
-                { x: processed.dates, y: processed.mu, name: 'Taxa μ', type: 'scatter', mode: 'lines', line: {color: '#0ea5e9', width: 2}, yaxis: 'y2' }
-            ], {
-                font: { family: 'Inter' }, plot_bgcolor: 'transparent', margin: { l: 50, r: 20, t: 10, b: 40 }, showlegend: false,
-                grid: { rows: 2, columns: 1, pattern: 'independent' },
-                yaxis: { domain: [0.55, 1], title: 'Biomassa (g/L)', gridcolor: '#f1f5f9' },
-                yaxis2: { domain: [0, 0.45], title: 'μ (h⁻¹)', gridcolor: '#f1f5f9' },
-                xaxis: { showticklabels: false, showgrid: false }, xaxis2: { anchor: 'y2', gridcolor: '#f1f5f9' }
-            }, {responsive: true, displayModeBar: false});
-
-            renderSpectralChart();
-
-            document.getElementById('grid-canais').innerHTML = Object.keys(DADOS_CANAIS).map(ch => {
-                let inf = DADOS_CANAIS[ch];
-                let val = Math.round(extrairValorNumericoPuro(cleanUltimo[ch], ch));
-                return `<div style="background-color: ${inf.cor}10; border-bottom: 3px solid ${inf.cor}" class="p-3 rounded-2xl text-center">
-                    <span class="text-slate-500 text-[9px] font-bold uppercase">${ch}</span><br>
-                    <span style="color: ${inf.cor}" class="text-md font-black">${val}</span></div>`;
-            }).join('');
-
-            const cols = window.headersGlobal;
-            document.getElementById('tabela-head').innerHTML = cols.map(c => `<th class="px-5 py-4 whitespace-nowrap">${c}</th>`).join('');
-            
-            let rowsParaTabela = [...filteredRows].reverse();
-            document.getElementById('tabela-body').innerHTML = rowsParaTabela.slice(0, 30).map(row => {
-                return `<tr class="hover:bg-slate-50 transition-colors">${cols.map(c => {
-                    let valorCelula = row[c] !== undefined ? row[c] : '';
-                    if (c === 'Data_Hora') {
-                        valorCelula = parseDate(valorCelula);
-                    } else if (c === 'State') {
-                        if (valorCelula.includes(':') || valorCelula.includes('-')) valorCelula = "Lag_Phase";
-                    } else {
-                        let floatLimpo = extrairValorNumericoPuro(valorCelula, c);
-                        valorCelula = (c === 'Temp' || c === 'Calib_Base') ? floatLimpo.toFixed(2) : (c === 'Biomass' || c === 'Mu' ? floatLimpo.toFixed(4) : Math.round(floatLimpo));
-                    }
-                    return `<td class="px-5 py-3 font-medium text-xs whitespace-nowrap">${valorCelula}</td>`;
-                }).join('')}</tr>`;
-            }).join('');
-
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('dashboard-content').style.display = 'block';
-            document.getElementById('rodape-data').innerText = `Sincronização: ${new Date().toLocaleString('pt-BR')}`;
-            dashboardLoaded = true; window.dispatchEvent(new Event('resize'));
-        }
-
-        function renderSpectralChart() {
-            if(!currentSpectralData) return; const data = currentSpectralData;
-            if(spectralMode === 'time') {
-                let traces = Object.keys(DADOS_CANAIS).map(ch => ({
-                    x: data.dates, y: data.spectral[ch], name: DADOS_CANAIS[ch].onda, type: 'scatter', mode: 'lines', line: { color: DADOS_CANAIS[ch].cor, width: 2, dash: DADOS_CANAIS[ch].dash }
-                }));
-                Plotly.newPlot('grafico-espectral', traces, { font: { family: 'Inter' }, margin: { l: 40, r: 10, t: 10, b: 40 }, xaxis: { gridcolor: "#f1f5f9" }, yaxis: { gridcolor: "#f1f5f9", rangemode: 'tozero' }, hovermode: 'x unified', showlegend: true, legend: { orientation: 'h', y: -0.2 } }, {responsive: true, displayModeBar: false});
-            } else {
-                // MODIFICAÇÃO DO PERFIL GAUSSIANO: Varre do Violeta (380nm) ao Infravermelho Próximo (900nm) conforme o Datasheet
-                const wavelengths = []; for(let w = 380; w <= 900; w += 2) wavelengths.push(w);
-                const latest = {}; Object.keys(DADOS_CANAIS).forEach(ch => { const arr = data.spectral[ch]; latest[ch] = arr[arr.length - 1] || 0; });
-                
-                let traces = ['F1', 'F2', 'FZ', 'F3', 'F4', 'FY', 'F5', 'FXL', 'F6', 'F7', 'F8', 'FNI', 'CLR'].map(ch => {
-                    const info = DADOS_CANAIS[ch]; const amplitude = latest[ch] || 0.1;
-                    const intensities = wavelengths.map(w => amplitude * Math.exp(-Math.pow(w - info.peak, 2) / (2 * Math.pow(info.sigma, 2))));
-                    
-                    return { 
-                        x: wavelengths, 
-                        y: intensities, 
-                        name: info.onda, 
-                        type: 'scatter', 
-                        mode: 'lines', 
-                        line: { color: info.cor, width: 2.5, dash: info.dash, shape: 'spline' }, 
-                        fill: (ch === 'CLR') ? 'none' : 'tozeroy', 
-                        fillcolor: info.cor + '15' 
-                    };
-                });
-                Plotly.newPlot('grafico-espectral', traces, { font: { family: 'Inter' }, margin: { l: 40, r: 20, t: 10, b: 40 }, xaxis: { title: 'Comprimento de Onda (nm)', range: [380, 900], gridcolor: "#f1f5f9" }, yaxis: { title: 'Intensidade Relativa (U.A.)', gridcolor: "#f1f5f9", rangemode: 'tozero' }, showlegend: true, legend: { orientation: 'h', y: -0.2 }, hovermode: 'closest' }, {responsive: true, displayModeBar: false});
-            }
-        }
-
-        function setSpectralMode(mode) {
-            spectralMode = mode;
-            document.getElementById('btn-mode-time').className = (mode === 'time') ? "px-3 py-1 text-[10px] font-bold rounded-md bg-white shadow-sm text-usp-600" : "px-3 py-1 text-[10px] font-bold rounded-md text-slate-500";
-            document.getElementById('btn-mode-wave').className = (mode === 'wave') ? "px-3 py-1 text-[10px] font-bold rounded-md bg-white shadow-sm text-usp-600" : "px-3 py-1 text-[10px] font-bold rounded-md text-slate-500";
-            if(dashboardLoaded) renderSpectralChart();
-        }
-
-        function downloadCSV() {
-            if(!window.currentRawData) return;
-            let csvRows = window.currentRawData.map(obj => ORDEM_ESTRUTURAL_COLUNAS.map(h => obj[h]));
-            csvRows.unshift(ORDEM_ESTRUTURAL_COLUNAS);
-            const blob = new Blob([Papa.unparse(csvRows)], { type: 'text/csv;charset=utf-8;' });
-            const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `export_sonda_${new Date().toISOString().split('T')[0]}.csv`;
-            document.body.appendChild(a); a.click(); document.body.removeChild(a);
-        }
-
-        function renderManageList() {
-            const list = document.getElementById('manage-sensors-list'); if(!list) return;
-            list.innerHTML = Object.entries(biorreatores).map(([n, id]) => `
-                <tr class="hover:bg-slate-50 transition-all">
-                    <td class="px-6 py-4 font-bold text-slate-700">${n}</td>
-                    <td class="px-6 py-4 text-[10px] font-mono text-slate-400 break-all">${id}</td>
-                    <td class="px-6 py-4 text-right">
-                        <div class="flex justify-end gap-2">
-                            <button onclick="editSensor('${n}')" class="p-2 text-blue-500 hover:bg-blue-50 rounded-lg"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg></button>
-                            <button onclick="deleteSensor('${n}')" class="p-2 text-red-500 hover:bg-red-50 rounded-lg"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
-                        </div>
-                    </td>
-                </tr>`).join('');
-        }
-
-        function showAddForm() { document.getElementById('sensor-form-container').classList.remove('hidden'); document.getElementById('btn-show-add-form').classList.add('hidden'); }
-        function cancelEdit() { document.getElementById('sensor-form-container').classList.add('hidden'); document.getElementById('btn-show-add-form').classList.remove('hidden'); }
-
-        function editSensor(name) {
-            showAddForm(); document.getElementById('new-sensor-name').value = name;
-            document.getElementById('new-sensor-id').value = biorreatores[name];
-            document.getElementById('edit-original-name').value = name;
-        }
-
-        async function saveSensor() {
-            const n = document.getElementById('new-sensor-name').value.trim();
-            const id = document.getElementById('new-sensor-id').value.trim();
-            const original = document.getElementById('edit-original-name').value;
-            if(!n || !id) return;
-
-            if(original && original !== n) delete biorreatores[original];
-            biorreatores[n] = id;
-            try {
-                await fetch(`${URL_BANCO_CENTRAL}?senha=${encodeURIComponent(sessaoSenha)}&action=setSensors`, { method: 'POST', body: JSON.stringify(biorreatores) });
-                initSensorsDropdown(); renderManageList(); cancelEdit();
-                showModal({ title: 'Sucesso', message: 'Biorreator saved na nuvem.', type: 'alert' });
-            } catch(e){}
-        }
-
-        function deleteSensor(n) {
-            showModal({ title: 'Excluir', message: 'Deseja excluir este biorreator?', type: 'confirm', onConfirm: async () => {
-                delete biorreatores[n];
-                await fetch(`${URL_BANCO_CENTRAL}?senha=${encodeURIComponent(sessaoSenha)}&action=setSensors`, { method: 'POST', body: JSON.stringify(biorreatores) });
-                renderManageList(); initSensorsDropdown();
-            }});
-        }
-
-        function initSensorsDropdown() {
-            const select = document.getElementById('sensor-select'); if(!select) return;
-            const entries = Object.entries(biorreatores);
-            select.innerHTML = entries.map(([nome, id]) => `<option value="${id}" ${id===activeSensorId?'selected':''}>${nome}</option>`).join('');
-            if(!activeSensorId && entries.length > 0) activeSensorId = entries[0][1];
-        }
-
-        function changeSensor() { activeSensorId = document.getElementById('sensor-select').value; loadDashboardData(); }
-        function selectSensorFromFleet(id) { activeSensorId = id; initSensorsDropdown(); loadDashboardData(); }
-        function manualRefresh() { loadDashboardData().then(() => updateFleetStatus()); }
-
-        function startAutoRefresh() {
-            if(refreshIntervalId) clearInterval(refreshIntervalId);
-            if(autoRefreshEnabled) { refreshIntervalId = setInterval(() => { if(!document.getElementById('view-dashboard').classList.contains('hidden')) manualRefresh(); }, autoRefreshInterval * 60000); }
-        }
-
-        window.onload = async () => { if (sessaoSenha) { let s = await syncDaNuvem(); if (s) { document.getElementById('login-overlay').classList.add('hidden'); loadDashboardData(); updateFleetStatus(); startAutoRefresh(); } } };
-    </script>
-</body>
-</html>
+                let dados
