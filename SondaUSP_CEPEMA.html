@@ -6,7 +6,7 @@
     <title>SondaUSP - Monitoramento Inteligente</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <script src="https://cdn.plotly.com/plotly-2.27.0.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
@@ -275,7 +275,7 @@
                     <div>
                         <label class="block text-sm font-semibold text-slate-700 mb-2">Tolerância Offline (Minutos)</label>
                         <input type="number" id="config-tolerance" class="w-full border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-usp-500 outline-none transition-all">
-                        <p class="text-[11px] text-slate-500 mt-2 Holidays-relaxed">Tempo máximo sem receber dados antes de marcar o biorreator como <span class="text-red-500 font-bold">🔴 Offline</span>.</p>
+                        <p class="text-[11px] text-slate-500 mt-2 leading-relaxed">Tempo máximo sem receber dados antes de marcar o biorreator como <span class="text-red-500 font-bold">🔴 Offline</span>.</p>
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-slate-700 mb-2">Visualização (Dias)</label>
@@ -401,20 +401,21 @@
         ];
 
         const DADOS_CANAIS = {
-            'F1': {onda: '405nm', peak: 405, sigma: 10, cor: '#4f46e5', dash: 'solid'},
-            'F2': {onda: '425nm', peak: 425, sigma: 10, cor: '#4338ca', dash: 'solid'},
-            'FZ': {onda: '450nm', peak: 450, sigma: 12, cor: '#2563eb', dash: 'solid'},
-            'F3': {onda: '475nm', peak: 475, sigma: 12, cor: '#0284c7', dash: 'solid'},
-            'F4': {onda: '510nm', peak: 510, sigma: 12, cor: '#059669', dash: 'solid'},
-            'FY': {onda: '545nm', peak: 545, sigma: 12, cor: '#16a34a', dash: 'solid'},
-            'F5': {onda: '570nm', peak: 570, sigma: 12, cor: '#ca8a04', dash: 'solid'},
-            'FXL': {onda: '600nm', peak: 600, sigma: 15, cor: '#ea580c', dash: 'solid'},
-            'F6': {onda: '630nm', peak: 630, sigma: 15, cor: '#dc2626', dash: 'solid'},
-            'F7': {onda: '670nm', peak: 670, sigma: 15, cor: '#b91c1c', dash: 'solid'},
-            'F8': {onda: '710nm', peak: 710, sigma: 15, cor: '#991b1b', dash: 'solid'},
-            'FNI': {onda: 'NIR', peak: 855, sigma: 40, cor: '#475569', dash: 'solid'},
-            'CLR': {onda: 'Clear', peak: 600, sigma: 250, cor: '#94a3b8', dash: 'dash'}
+            'F1':  {onda: 'F1 (405nm)',  peak: 405, sigma: 12, cor: '#4f46e5', dash: 'solid'},
+            'F2':  {onda: 'F2 (425nm)',  peak: 425, sigma: 12, cor: '#4338ca', dash: 'solid'},
+            'FZ':  {onda: 'FZ (450nm)',  peak: 450, sigma: 14, cor: '#2563eb', dash: 'solid'},
+            'F3':  {onda: 'F3 (475nm)',  peak: 475, sigma: 14, cor: '#0284c7', dash: 'solid'},
+            'F4':  {onda: 'F4 (515nm)',  peak: 515, sigma: 14, cor: '#059669', dash: 'solid'},
+            'FY':  {onda: 'FY (555nm)',  peak: 555, sigma: 14, cor: '#16a34a', dash: 'solid'},
+            'F5':  {onda: 'F5 (550nm)',  peak: 550, sigma: 14, cor: '#84cc16', dash: 'solid'},
+            'FXL': {onda: 'FXL (600nm)', peak: 600, sigma: 16, cor: '#ea580c', dash: 'solid'},
+            'F6':  {onda: 'F6 (640nm)',  peak: 640, sigma: 16, cor: '#dc2626', dash: 'solid'},
+            'F7':  {onda: 'F7 (690nm)',  peak: 690, sigma: 16, cor: '#b91c1c', dash: 'solid'},
+            'F8':  {onda: 'F8 (745nm)',  peak: 745, sigma: 18, cor: '#7f1d1d', dash: 'solid'},
+            'FNI': {onda: 'NIR (855nm)', peak: 855, sigma: 30, cor: '#1e293b', dash: 'solid'},
+            'CLR': {onda: 'VIS (Clear)', peak: 560, sigma: 130, cor: '#64748b', dash: 'dash'}
         };
+
         const CORES_FASES = {
             'lag_phase': { bg: '#f0f9ff', border: '#bae6fd', text: '#0284c7' },
             'log_phase': { bg: '#f0fdf4', border: '#bbf7d0', text: '#16a34a' },
@@ -423,18 +424,15 @@
             'n/a': { bg: '#ffffff', border: '#e2e8f0', text: '#94a3b8' }
         };
 
-        // PROTEÇÃO TOTAL: Tratamento estrito contra números contendo vírgula decimal regional e filtragem anti-data
         function extrairValorNumericoPuro(valor, chaveColuna) {
             if (valor === undefined || valor === null) return 0;
             let str = valor.toString().trim();
             if (str === '' || str === 'N/A') return 0;
 
-            // Se vier formato europeu/brasileiro (ex: "25,5000"), normaliza para o padrão americano de float ("25.5000")
             if (str.includes(',') && !str.includes('"')) {
                 str = str.replace(',', '.');
             }
 
-            // Se o dado bruto conter máscaras de tempo, isola o resíduo numérico inicial válido
             if (str.includes('-') || str.includes(':') || str.includes('/') || str.match(/[a-zA-Z]/)) {
                 let numExtraido = parseFloat(str);
                 if (!isNaN(numExtraido) && numExtraido > 0 && numExtraido < 20000) return numExtraido;
@@ -444,7 +442,6 @@
             return isNaN(finalNum) ? 0 : finalNum;
         }
 
-        // Tokenizador CSV de alta precisão contra quebras erradas geradas por células com aspas ou vírgulas locais
         function tokenizarLinhaCSV(linhaTexto) {
             let resultado = [];
             let dentroDeAspas = false;
@@ -619,13 +616,16 @@
                 const date = new Date(now.getTime() - (i * 3600000));
                 mockRows.push({
                     'Data_Hora': date.toISOString(), 'Biomass': (1.1 + Math.random() * 0.2).toString(), 'Mu': '0.021', 'Temp': '24.5', 'State': 'Log_Phase', 'Calib_Base': '64.00',
-                    'F1': '10', 'F2': '12', 'FZ': '25', 'F3': '15', 'F4': '26', 'FY': '38', 'F5': '12', 'FXL': '32', 'F6': '21', 'F7': '2', 'F8': '12', 'FNI': '14', 'CLR': '50'
+                    'F1': '110', 'F2': '135', 'FZ': '240', 'F3': '180', 'F4': '320', 'FY': '410', 'F5': '390', 'FXL': '220', 'F6': '480', 'F7': '510', 'F8': '190', 'FNI': '85', 'CLR': '650'
                 });
             }
             window.headersGlobal = ORDEM_ESTRUTURAL_COLUNAS;
             processData(mockRows); switchView('dashboard');
         }
 
+        // ==========================================
+        // 🚨 NÚCLEO MODIFICADO CONTRA TRAVAMENTO 🚨
+        // ==========================================
         async function loadDashboardData() {
             if (Object.keys(biorreatores).length === 0) { switchView('settings'); return; }
             if (!activeSensorId) activeSensorId = Object.values(biorreatores)[0];
@@ -638,27 +638,79 @@
                 const response = await fetch(`${activeSensorId}?senha=${encodeURIComponent(sessaoSenha)}&_t=${Date.now()}`);
                 const csvText = await response.text();
                 
-                // Divisão das linhas bruta contendo normalização de quebra
-                let linhasBrutas = csvText.split(/\r?\n/);
-                if (linhasBrutas.length > 1) {
-                    let rawCabecalhos = tokenizarLinhaCSV(linhasBrutas[0]).map(h => h.trim());
+                // Trata e limpa todas as quebras de linha enviadas pelo loop do Apps Script
+                let linesRaw = csvText.split(/\r?\n/).map(line => line.trim()).filter(line => line !== '');
+                
+                // PROTEÇÃO RADICAL: Se houver 1 ou menos linhas, ou se o retorno indicar erro de credencial
+                if (linesRaw.length <= 1 || csvText.includes("Acesso Negado") || csvText.includes("Comando Inválido")) {
+                    exibirDashboardVazio();
+                    return;
+                }
+                
+                let rawCabecalhos = tokenizarLinhaCSV(linesRaw[0]).map(h => h.trim());
+                let dadosMapeados = [];
+                
+                for(let i = 1; i < linesRaw.length; i++) {
+                    let rowTokens = tokenizarLinhaCSV(linesRaw[i]);
+                    if (rowTokens.length === 0 || (rowTokens.length === 1 && rowTokens[0] === "")) continue;
                     
-                    let dadosMapeados = [];
-                    for(let i = 1; i < linhasBrutas.length; i++) {
-                        if (linhasBrutas[i].trim() === '') continue;
-                        let rowTokens = tokenizarLinhaCSV(linhasBrutas[i]);
-                        let objItem = {};
-                        
-                        ORDEM_ESTRUTURAL_COLUNAS.forEach(col => {
-                            let idxPlanilha = rawCabecalhos.findIndex(h => h.toLowerCase() === col.toLowerCase());
-                            objItem[col] = (idxPlanilha !== -1 && rowTokens[idxPlanilha] !== undefined) ? rowTokens[idxPlanilha].trim() : "";
-                        });
-                        dadosMapeados.push(objItem);
-                    }
-                    window.headersGlobal = ORDEM_ESTRUTURAL_COLUNAS;
-                    processData(dadosMapeados);
-                } else { document.getElementById('loading').innerHTML = "<p class='text-red-500'>Planilha vazia ou desalinhada.</p>"; }
-            } catch (err) { document.getElementById('loading').innerHTML = "<p class='text-red-500'>Erro ao conectar com o Servidor.</p>"; }
+                    let objItem = {};
+                    ORDEM_ESTRUTURAL_COLUNAS.forEach(col => {
+                        let idxPlanilha = rawCabecalhos.findIndex(h => h.toLowerCase() === col.toLowerCase());
+                        objItem[col] = (idxPlanilha !== -1 && rowTokens[idxPlanilha] !== undefined) ? rowTokens[idxPlanilha].trim() : "";
+                    });
+                    dadosMapeados.push(objItem);
+                }
+
+                // Nova dupla checagem: Se após processar as linhas nenhum dado estruturado válido restou
+                if (dadosMapeados.length === 0) {
+                    exibirDashboardVazio();
+                    return;
+                }
+
+                window.headersGlobal = ORDEM_ESTRUTURAL_COLUNAS;
+                processData(dadosMapeados);
+
+            } catch (err) { 
+                document.getElementById('loading').innerHTML = "<p class='text-red-500 font-bold'>⚠️ Erro ao conectar ou processar dados da API do Biorreator.</p>"; 
+            }
+        }
+
+        // FUNÇÃO COMPLEMENTAR AUTOMÁTICA DE ZERO-DATA
+        function exibirDashboardVazio() {
+            window.headersGlobal = ORDEM_ESTRUTURAL_COLUNAS;
+            window.currentRawData = [];
+            
+            document.getElementById('metrica-biomassa').innerText = "0.0000";
+            document.getElementById('metrica-mu').innerText = "0.0000";
+            document.getElementById('metrica-temp').innerText = "0.00";
+            document.getElementById('metrica-calib').innerText = "0.00";
+            
+            const mf = document.getElementById('metrica-fase');
+            mf.innerText = "Sem Dados";
+            mf.style.color = "#94a3b8";
+            document.getElementById('card-fase').style.backgroundColor = "#ffffff";
+            document.getElementById('card-fase').style.borderColor = "#e2e8f0";
+            
+            // Purga os gráficos para evitar erros fatais internos do Plotly Engine
+            try { Plotly.purge('grafico-cinetica'); } catch(e){}
+            try { Plotly.purge('grafico-espectral'); } catch(e){}
+            
+            // Cria tabelas informativas limpas
+            document.getElementById('tabela-head').innerHTML = ORDEM_ESTRUTURAL_COLUNAS.map(c => `<th class="px-5 py-4 whitespace-nowrap">${c}</th>`).join('');
+            document.getElementById('tabela-body').innerHTML = `<tr><td colspan="${ORDEM_ESTRUTURAL_COLUNAS.length}" class="px-5 py-8 text-center text-slate-400 italic font-medium">Nenhum registro encontrado. Aguardando transmissões do ESP32-C3...</td></tr>`;
+            
+            document.getElementById('grid-canais').innerHTML = Object.keys(DADOS_CANAIS).map(ch => {
+                return `<div style="background-color: #f1f5f9; border-bottom: 3px solid #cbd5e1" class="p-3 rounded-2xl text-center">
+                    <span class="text-slate-400 text-[9px] font-bold uppercase">${ch}</span><br>
+                    <span class="text-slate-400 text-md font-black">0</span></div>`;
+            }).join('');
+
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('dashboard-content').style.display = 'block';
+            document.getElementById('rodape-data').innerText = `Atualizado (Sem Dados): ${new Date().toLocaleString('pt-BR')}`;
+            dashboardLoaded = true;
+            window.dispatchEvent(new Event('resize'));
         }
 
         async function updateFleetStatus() {
@@ -672,9 +724,9 @@
                 try {
                     const res = await fetch(`${id}?senha=${encodeURIComponent(sessaoSenha)}&_t=${Date.now()}`);
                     const text = await res.text();
-                    let lines = text.split(/\r?\n/);
+                    let lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l !== '');
                     if(lines.length > 1) {
-                        let tokensUltima = tokenizarLinhaCSV(lines[lines.length-2]);
+                        let tokensUltima = tokenizarLinhaCSV(lines[lines.length-1]);
                         let parsed = parseDate(tokensUltima[0]);
                         if(parsed && (new Date().getTime() - new Date(parsed.replace(/-/g, '/')).getTime()) < toleranceMinutes * 60000) { boxOnline = true; }
                     }
@@ -767,8 +819,8 @@
                 let inf = DADOS_CANAIS[ch];
                 let val = Math.round(extrairValorNumericoPuro(cleanUltimo[ch], ch));
                 return `<div style="background-color: ${inf.cor}10; border-bottom: 3px solid ${inf.cor}" class="p-3 rounded-2xl text-center">
-                    <span class="text-slate-500 text-[9px] font-bold uppercase">${inf.onda}</span><br>
-                    <span style="color: ${inf.cor}" class="text-lg font-black">${val}</span></div>`;
+                    <span class="text-slate-500 text-[9px] font-bold uppercase">${ch}</span><br>
+                    <span style="color: ${inf.cor}" class="text-md font-black">${val}</span></div>`;
             }).join('');
 
             const cols = window.headersGlobal;
@@ -802,16 +854,27 @@
                 let traces = Object.keys(DADOS_CANAIS).map(ch => ({
                     x: data.dates, y: data.spectral[ch], name: DADOS_CANAIS[ch].onda, type: 'scatter', mode: 'lines', line: { color: DADOS_CANAIS[ch].cor, width: 2, dash: DADOS_CANAIS[ch].dash }
                 }));
-                Plotly.newPlot('grafico-espectral', traces, { font: { family: 'Inter' }, margin: { l: 40, r: 10, t: 10, b: 40 }, xaxis: { gridcolor: "#f1f5f9" }, yaxis: { gridcolor: "#f1f5f9", rangemode: 'tozero' }, hovermode: 'x unified', showlegend: false }, {responsive: true, displayModeBar: false});
+                Plotly.newPlot('grafico-espectral', traces, { font: { family: 'Inter' }, margin: { l: 40, r: 10, t: 10, b: 40 }, xaxis: { gridcolor: "#f1f5f9" }, yaxis: { gridcolor: "#f1f5f9", rangemode: 'tozero' }, hovermode: 'x unified', showlegend: true, legend: { orientation: 'h', y: -0.2 } }, {responsive: true, displayModeBar: false});
             } else {
-                const wavelengths = []; for(let w = 350; w <= 1050; w += 5) wavelengths.push(w);
+                const wavelengths = []; for(let w = 380; w <= 900; w += 2) wavelengths.push(w);
                 const latest = {}; Object.keys(DADOS_CANAIS).forEach(ch => { const arr = data.spectral[ch]; latest[ch] = arr[arr.length - 1] || 0; });
+                
                 let traces = ['F1', 'F2', 'FZ', 'F3', 'F4', 'FY', 'F5', 'FXL', 'F6', 'F7', 'F8', 'FNI', 'CLR'].map(ch => {
                     const info = DADOS_CANAIS[ch]; const amplitude = latest[ch] || 0.1;
                     const intensities = wavelengths.map(w => amplitude * Math.exp(-Math.pow(w - info.peak, 2) / (2 * Math.pow(info.sigma, 2))));
-                    return { x: wavelengths, y: intensities, name: info.onda, type: 'scatter', mode: 'lines', line: { color: info.cor, width: 2.5, dash: info.dash, shape: 'spline' }, fill: (ch === 'CLR') ? 'none' : 'tozeroy', fillcolor: info.cor + '25' };
+                    
+                    return { 
+                        x: wavelengths, 
+                        y: intensities, 
+                        name: info.onda, 
+                        type: 'scatter', 
+                        mode: 'lines', 
+                        line: { color: info.cor, width: 2.5, dash: info.dash, shape: 'spline' }, 
+                        fill: (ch === 'CLR') ? 'none' : 'tozeroy', 
+                        fillcolor: info.cor + '15' 
+                    };
                 });
-                Plotly.newPlot('grafico-espectral', traces, { font: { family: 'Inter' }, margin: { l: 40, r: 20, t: 10, b: 40 }, xaxis: { title: 'nm', range: [350, 1050], gridcolor: "#f1f5f9" }, yaxis: { title: 'U.A.', gridcolor: "#f1f5f9", rangemode: 'tozero' }, showlegend: false, hovermode: 'closest' }, {responsive: true, displayModeBar: false});
+                Plotly.newPlot('grafico-espectral', traces, { font: { family: 'Inter' }, margin: { l: 40, r: 20, t: 10, b: 40 }, xaxis: { title: 'Comprimento de Onda (nm)', range: [380, 900], gridcolor: "#f1f5f9" }, yaxis: { title: 'Intensidade Relativa (U.A.)', gridcolor: "#f1f5f9", rangemode: 'tozero' }, showlegend: true, legend: { orientation: 'h', y: -0.2 }, hovermode: 'closest' }, {responsive: true, displayModeBar: false});
             }
         }
 
@@ -819,11 +882,11 @@
             spectralMode = mode;
             document.getElementById('btn-mode-time').className = (mode === 'time') ? "px-3 py-1 text-[10px] font-bold rounded-md bg-white shadow-sm text-usp-600" : "px-3 py-1 text-[10px] font-bold rounded-md text-slate-500";
             document.getElementById('btn-mode-wave').className = (mode === 'wave') ? "px-3 py-1 text-[10px] font-bold rounded-md bg-white shadow-sm text-usp-600" : "px-3 py-1 text-[10px] font-bold rounded-md text-slate-500";
-            if(dashboardLoaded) renderSpectralChart();
+            if(dashboardLoaded && currentSpectralData && currentSpectralData.dates.length > 0) renderSpectralChart();
         }
 
         function downloadCSV() {
-            if(!window.currentRawData) return;
+            if(!window.currentRawData || window.currentRawData.length === 0) return;
             let csvRows = window.currentRawData.map(obj => ORDEM_ESTRUTURAL_COLUNAS.map(h => obj[h]));
             csvRows.unshift(ORDEM_ESTRUTURAL_COLUNAS);
             const blob = new Blob([Papa.unparse(csvRows)], { type: 'text/csv;charset=utf-8;' });
