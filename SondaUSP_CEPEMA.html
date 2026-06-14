@@ -6,9 +6,9 @@
     <title>SondaUSP - Monitoramento Inteligente</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <script src="https://cdn.plotly.com/plotly-2.27.0.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2=family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <script>
         tailwind.config = {
@@ -248,9 +248,9 @@
                         <svg class="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></summary>
                     <div class="p-0 bg-white overflow-x-auto table-container border-t border-slate-200">
                         <table id="tabela-dados" class="w-full text-sm text-left">
-                            <thead class="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold tracking-widest">
+                            <head class="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold tracking-widest">
                                 <tr id="tabela-head"></tr>
-                            </thead>
+                            </head>
                             <tbody id="tabela-body" class="divide-y divide-slate-100 text-slate-600"></tbody>
                         </table>
                     </div>
@@ -400,21 +400,23 @@
             'F1', 'F2', 'FZ', 'F3', 'F4', 'FY', 'F5', 'FXL', 'F6', 'F7', 'F8', 'FNI', 'CLR'
         ];
 
+        // Mapeamento Completo com as 13 chaves do novo Sensor AS7343 em harmonia com o Datasheet
         const DADOS_CANAIS = {
-            'F1': {onda: '405nm', peak: 405, sigma: 10, cor: '#4f46e5', dash: 'solid'},
-            'F2': {onda: '425nm', peak: 425, sigma: 10, cor: '#4338ca', dash: 'solid'},
-            'FZ': {onda: '450nm', peak: 450, sigma: 12, cor: '#2563eb', dash: 'solid'},
-            'F3': {onda: '475nm', peak: 475, sigma: 12, cor: '#0284c7', dash: 'solid'},
-            'F4': {onda: '510nm', peak: 510, sigma: 12, cor: '#059669', dash: 'solid'},
-            'FY': {onda: '545nm', peak: 545, sigma: 12, cor: '#16a34a', dash: 'solid'},
-            'F5': {onda: '570nm', peak: 570, sigma: 12, cor: '#ca8a04', dash: 'solid'},
-            'FXL': {onda: '600nm', peak: 600, sigma: 15, cor: '#ea580c', dash: 'solid'},
-            'F6': {onda: '630nm', peak: 630, sigma: 15, cor: '#dc2626', dash: 'solid'},
-            'F7': {onda: '670nm', peak: 670, sigma: 15, cor: '#b91c1c', dash: 'solid'},
-            'F8': {onda: '710nm', peak: 710, sigma: 15, cor: '#991b1b', dash: 'solid'},
-            'FNI': {onda: 'NIR', peak: 855, sigma: 40, cor: '#475569', dash: 'solid'},
-            'CLR': {onda: 'Clear', peak: 600, sigma: 250, cor: '#94a3b8', dash: 'dash'}
+            'F1':  {onda: 'F1 (405nm)',  peak: 405, sigma: 12, cor: '#4f46e5', dash: 'solid'},
+            'F2':  {onda: 'F2 (425nm)',  peak: 425, sigma: 12, cor: '#4338ca', dash: 'solid'},
+            'FZ':  {onda: 'FZ (450nm)',  peak: 450, sigma: 14, cor: '#2563eb', dash: 'solid'},
+            'F3':  {onda: 'F3 (475nm)',  peak: 475, sigma: 14, cor: '#0284c7', dash: 'solid'},
+            'F4':  {onda: 'F4 (515nm)',  peak: 515, sigma: 14, cor: '#059669', dash: 'solid'},
+            'FY':  {onda: 'FY (555nm)',  peak: 555, sigma: 14, cor: '#16a34a', dash: 'solid'},
+            'F5':  {onda: 'F5 (550nm)',  peak: 550, sigma: 14, cor: '#84cc16', dash: 'solid'},
+            'FXL': {onda: 'FXL (600nm)', peak: 600, sigma: 16, cor: '#ea580c', dash: 'solid'},
+            'F6':  {onda: 'F6 (640nm)',  peak: 640, sigma: 16, cor: '#dc2626', dash: 'solid'},
+            'F7':  {onda: 'F7 (690nm)',  peak: 690, sigma: 16, cor: '#b91c1c', dash: 'solid'},
+            'F8':  {onda: 'F8 (745nm)',  peak: 745, sigma: 18, cor: '#7f1d1d', dash: 'solid'},
+            'FNI': {onda: 'NIR (855nm)', peak: 855, sigma: 30, cor: '#1e293b', dash: 'solid'}, // Corresponde ao NIR
+            'CLR': {onda: 'VIS (Clear)', peak: 560, sigma: 130, cor: '#64748b', dash: 'dash'}  // Corresponde ao VIS
         };
+
         const CORES_FASES = {
             'lag_phase': { bg: '#f0f9ff', border: '#bae6fd', text: '#0284c7' },
             'log_phase': { bg: '#f0fdf4', border: '#bbf7d0', text: '#16a34a' },
@@ -423,18 +425,15 @@
             'n/a': { bg: '#ffffff', border: '#e2e8f0', text: '#94a3b8' }
         };
 
-        // PROTEÇÃO TOTAL: Tratamento estrito contra números contendo vírgula decimal regional e filtragem anti-data
         function extrairValorNumericoPuro(valor, chaveColuna) {
             if (valor === undefined || valor === null) return 0;
             let str = valor.toString().trim();
             if (str === '' || str === 'N/A') return 0;
 
-            // Se vier formato europeu/brasileiro (ex: "25,5000"), normaliza para o padrão americano de float ("25.5000")
             if (str.includes(',') && !str.includes('"')) {
                 str = str.replace(',', '.');
             }
 
-            // Se o dado bruto conter máscaras de tempo, isola o resíduo numérico inicial válido
             if (str.includes('-') || str.includes(':') || str.includes('/') || str.match(/[a-zA-Z]/)) {
                 let numExtraido = parseFloat(str);
                 if (!isNaN(numExtraido) && numExtraido > 0 && numExtraido < 20000) return numExtraido;
@@ -444,7 +443,6 @@
             return isNaN(finalNum) ? 0 : finalNum;
         }
 
-        // Tokenizador CSV de alta precisão contra quebras erradas geradas por células com aspas ou vírgulas locais
         function tokenizarLinhaCSV(linhaTexto) {
             let resultado = [];
             let dentroDeAspas = false;
@@ -453,6 +451,7 @@
             for (let i = 0; i < linhaTexto.length; i++) {
                 let caractere = linhaTexto[i];
                 if (caractere === '"') {
+                    insideQuoted = !dentroDeAspas;
                     dentroDeAspas = !dentroDeAspas;
                 } else if (caractere === ',' && !dentroDeAspas) {
                     resultado.push(tokenAtual.replace(/^"|"$/g, '').trim());
@@ -619,7 +618,7 @@
                 const date = new Date(now.getTime() - (i * 3600000));
                 mockRows.push({
                     'Data_Hora': date.toISOString(), 'Biomass': (1.1 + Math.random() * 0.2).toString(), 'Mu': '0.021', 'Temp': '24.5', 'State': 'Log_Phase', 'Calib_Base': '64.00',
-                    'F1': '10', 'F2': '12', 'FZ': '25', 'F3': '15', 'F4': '26', 'FY': '38', 'F5': '12', 'FXL': '32', 'F6': '21', 'F7': '2', 'F8': '12', 'FNI': '14', 'CLR': '50'
+                    'F1': '110', 'F2': '135', 'FZ': '240', 'F3': '180', 'F4': '320', 'FY': '410', 'F5': '390', 'FXL': '220', 'F6': '480', 'F7': '510', 'F8': '190', 'FNI': '85', 'CLR': '650'
                 });
             }
             window.headersGlobal = ORDEM_ESTRUTURAL_COLUNAS;
@@ -638,15 +637,14 @@
                 const response = await fetch(`${activeSensorId}?senha=${encodeURIComponent(sessaoSenha)}&_t=${Date.now()}`);
                 const csvText = await response.text();
                 
-                // Divisão das linhas bruta contendo normalização de quebra
-                let linhasBrutas = csvText.split(/\r?\n/);
-                if (linhasBrutas.length > 1) {
-                    let rawCabecalhos = tokenizarLinhaCSV(linhasBrutas[0]).map(h => h.trim());
+                let linesRaw = csvText.split(/\r?\n/);
+                if (linesRaw.length > 1) {
+                    let rawCabecalhos = tokenizarLinhaCSV(linesRaw[0]).map(h => h.trim());
                     
                     let dadosMapeados = [];
-                    for(let i = 1; i < linhasBrutas.length; i++) {
-                        if (linhasBrutas[i].trim() === '') continue;
-                        let rowTokens = tokenizarLinhaCSV(linhasBrutas[i]);
+                    for(let i = 1; i < linesRaw.length; i++) {
+                        if (linesRaw[i].trim() === '') continue;
+                        let rowTokens = tokenizarLinhaCSV(linesRaw[i]);
                         let objItem = {};
                         
                         ORDEM_ESTRUTURAL_COLUNAS.forEach(col => {
@@ -767,8 +765,8 @@
                 let inf = DADOS_CANAIS[ch];
                 let val = Math.round(extrairValorNumericoPuro(cleanUltimo[ch], ch));
                 return `<div style="background-color: ${inf.cor}10; border-bottom: 3px solid ${inf.cor}" class="p-3 rounded-2xl text-center">
-                    <span class="text-slate-500 text-[9px] font-bold uppercase">${inf.onda}</span><br>
-                    <span style="color: ${inf.cor}" class="text-lg font-black">${val}</span></div>`;
+                    <span class="text-slate-500 text-[9px] font-bold uppercase">${ch}</span><br>
+                    <span style="color: ${inf.cor}" class="text-md font-black">${val}</span></div>`;
             }).join('');
 
             const cols = window.headersGlobal;
@@ -802,16 +800,29 @@
                 let traces = Object.keys(DADOS_CANAIS).map(ch => ({
                     x: data.dates, y: data.spectral[ch], name: DADOS_CANAIS[ch].onda, type: 'scatter', mode: 'lines', line: { color: DADOS_CANAIS[ch].cor, width: 2, dash: DADOS_CANAIS[ch].dash }
                 }));
-                Plotly.newPlot('grafico-espectral', traces, { font: { family: 'Inter' }, margin: { l: 40, r: 10, t: 10, b: 40 }, xaxis: { gridcolor: "#f1f5f9" }, yaxis: { gridcolor: "#f1f5f9", rangemode: 'tozero' }, hovermode: 'x unified', showlegend: false }, {responsive: true, displayModeBar: false});
+                Plotly.newPlot('grafico-espectral', traces, { font: { family: 'Inter' }, margin: { l: 40, r: 10, t: 10, b: 40 }, xaxis: { gridcolor: "#f1f5f9" }, yaxis: { gridcolor: "#f1f5f9", rangemode: 'tozero' }, hovermode: 'x unified', showlegend: true, legend: { orientation: 'h', y: -0.2 } }, {responsive: true, displayModeBar: false});
             } else {
-                const wavelengths = []; for(let w = 350; w <= 1050; w += 5) wavelengths.push(w);
+                // MODIFICAÇÃO DO PERFIL GAUSSIANO: Varre do Violeta (380nm) ao Infravermelho Próximo (900nm) conforme o Datasheet
+                const wavelengths = []; for(let w = 380; w <= 900; w += 2) wavelengths.push(w);
                 const latest = {}; Object.keys(DADOS_CANAIS).forEach(ch => { const arr = data.spectral[ch]; latest[ch] = arr[arr.length - 1] || 0; });
+                
+                // Renderização estruturada seguindo as 13 chaves ópticas ativas do AS7343
                 let traces = ['F1', 'F2', 'FZ', 'F3', 'F4', 'FY', 'F5', 'FXL', 'F6', 'F7', 'F8', 'FNI', 'CLR'].map(ch => {
                     const info = DADOS_CANAIS[ch]; const amplitude = latest[ch] || 0.1;
                     const intensities = wavelengths.map(w => amplitude * Math.exp(-Math.pow(w - info.peak, 2) / (2 * Math.pow(info.sigma, 2))));
-                    return { x: wavelengths, y: intensities, name: info.onda, type: 'scatter', mode: 'lines', line: { color: info.cor, width: 2.5, dash: info.dash, shape: 'spline' }, fill: (ch === 'CLR') ? 'none' : 'tozeroy', fillcolor: info.cor + '25' };
+                    
+                    return { 
+                        x: wavelengths, 
+                        y: intensities, 
+                        name: info.onda, 
+                        type: 'scatter', 
+                        mode: 'lines', 
+                        line: { color: info.cor, width: 2.5, dash: info.dash, shape: 'spline' }, 
+                        fill: (ch === 'CLR') ? 'none' : 'tozeroy', 
+                        fillcolor: info.cor + '15' 
+                    };
                 });
-                Plotly.newPlot('grafico-espectral', traces, { font: { family: 'Inter' }, margin: { l: 40, r: 20, t: 10, b: 40 }, xaxis: { title: 'nm', range: [350, 1050], gridcolor: "#f1f5f9" }, yaxis: { title: 'U.A.', gridcolor: "#f1f5f9", rangemode: 'tozero' }, showlegend: false, hovermode: 'closest' }, {responsive: true, displayModeBar: false});
+                Plotly.newPlot('grafico-espectral', traces, { font: { family: 'Inter' }, margin: { l: 40, r: 20, t: 10, b: 40 }, xaxis: { title: 'Comprimento de Onda (nm)', range: [380, 900], gridcolor: "#f1f5f9" }, yaxis: { title: 'Intensidade Relativa (U.A.)', gridcolor: "#f1f5f9", rangemode: 'tozero' }, showlegend: true, legend: { orientation: 'h', y: -0.2 }, hovermode: 'closest' }, {responsive: true, displayModeBar: false});
             }
         }
 
@@ -866,7 +877,7 @@
             try {
                 await fetch(`${URL_BANCO_CENTRAL}?senha=${encodeURIComponent(sessaoSenha)}&action=setSensors`, { method: 'POST', body: JSON.stringify(biorreatores) });
                 initSensorsDropdown(); renderManageList(); cancelEdit();
-                showModal({ title: 'Sucesso', message: 'Biorreator salvo na nuvem.', type: 'alert' });
+                showModal({ title: 'Sucesso', message: 'Biorreator saved na nuvem.', type: 'alert' });
             } catch(e){}
         }
 
