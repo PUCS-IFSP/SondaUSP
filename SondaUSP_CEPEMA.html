@@ -386,7 +386,7 @@
             'F1', 'F2', 'FZ', 'F3', 'F4', 'FY', 'F5', 'FXL', 'F6', 'F7', 'F8', 'FNI', 'CLR'
         ];
 
-        // CONFIGURAÇÃO DOS CANAIS AS7343 CONFORME O DATASHEET
+        // CONFIGURAÇÃO GAUSSIANA DOS 14 CANAIS AS7343 CONFORME FICHA TÉCNICA
         const DADOS_CANAIS = {
             'F1':  {onda: 'F1 (405nm)',  peak: 405, sigma: 15, cor: '#4B0082', dash: 'solid'},
             'F2':  {onda: 'F2 (425nm)',  peak: 425, sigma: 15, cor: '#4169E1', dash: 'solid'},
@@ -411,43 +411,12 @@
             'n/a': { bg: '#ffffff', border: '#e2e8f0', text: '#94a3b8' }
         };
 
-        // PARSER DE ENGENHARIA - SÓ ACEITA PONTO COMO DECIMAL PARA CÁLCULO LOGÍCO
         function extrairValorNumericoPuro(valor, chaveColuna) {
             if (valor === undefined || valor === null) return 0;
             let str = valor.toString().trim();
             if (str === '' || str === 'N/A') return 0;
-
-            if (str.includes(',') && !str.includes('"')) {
-                str = str.replace(',', '.');
-            }
-
-            if (str.includes('-') || str.includes(':') || str.includes('/') || str.match(/[a-zA-Z]/)) {
-                let numExtraido = parseFloat(str);
-                if (!isNaN(numExtraido) && numExtraido > 0 && numExtraido < 20000) return numExtraido;
-                return (chaveColuna === 'Temp') ? 25.5 : 0; 
-            }
             let finalNum = parseFloat(str);
             return isNaN(finalNum) ? 0 : finalNum;
-        }
-
-        function tokenizarLinhaCSV(linhaTexto) {
-            let resultado = [];
-            let dentroDeAspas = false;
-            let tokenAtual = '';
-            
-            for (let i = 0; i < linhaTexto.length; i++) {
-                let caractere = linhaTexto[i];
-                if (caractere === '"') {
-                    dentroDeAspas = !dentroDeAspas;
-                } else if (caractere === ',' && !dentroDeAspas) {
-                    resultado.push(tokenAtual.replace(/^"|"$/g, '').trim());
-                    tokenAtual = '';
-                } else {
-                    tokenAtual += caractere;
-                }
-            }
-            resultado.push(tokenAtual.replace(/^"|"$/g, '').trim());
-            return resultado;
         }
 
         async function syncDaNuvem() {
@@ -603,7 +572,7 @@
             for(let i = 0; i < 40; i++) {
                 const date = new Date(now.getTime() - (i * 3600000));
                 mockRows.push({
-                    'Data_Hora': date.toISOString(), 'Biomass': (1.1 + Math.random() * 0.2).toString(), 'Mu': '0.021', 'Temp': '24.5', 'State': 'Log_Phase', 'Calib_Base': '64.00',
+                    'Data_Hora': date.toISOString(), 'Biomass': '1.15', 'Mu': '0.021', 'Temp': '24.5', 'State': 'Log_Phase', 'Calib_Base': '64.00',
                     'F1': '110', 'F2': '135', 'FZ': '240', 'F3': '180', 'F4': '320', 'FY': '410', 'F5': '390', 'FXL': '220', 'F6': '480', 'F7': '510', 'F8': '190', 'FNI': '85', 'CLR': '650'
                 });
             }
@@ -611,6 +580,9 @@
             processData(mockRows); switchView('dashboard');
         }
 
+        // ==========================================
+        // 🚨 PARSER ADAPTADO PARA PONTO E VÍRGULA 🚨
+        // ==========================================
         async function loadDashboardData() {
             if (Object.keys(biorreatores).length === 0) { switchView('settings'); return; }
             if (!activeSensorId) activeSensorId = Object.values(biorreatores)[0];
@@ -630,17 +602,24 @@
                     return;
                 }
                 
-                let rawCabecalhos = tokenizarLinhaCSV(linesRaw[0]).map(h => h.trim());
+                // Quebra os cabeçalhos usando ponto e vírgula estrutural (;)
+                let rawCabecalhos = linesRaw[0].split(';').map(h => h.trim());
                 let dadosMapeados = [];
                 
                 for(let i = 1; i < linesRaw.length; i++) {
-                    let rowTokens = tokenizarLinhaCSV(linesRaw[i]);
+                    let rowTokens = linesRaw[i].split(';');
                     if (rowTokens.length === 0 || (rowTokens.length === 1 && rowTokens[0] === "")) continue;
                     
                     let objItem = {};
                     ORDEM_ESTRUTURAL_COLUNAS.forEach(col => {
                         let idxPlanilha = rawCabecalhos.findIndex(h => h.toLowerCase() === col.toLowerCase());
-                        objItem[col] = (idxPlanilha !== -1 && rowTokens[idxPlanilha] !== undefined) ? rowTokens[idxPlanilha].trim() : "";
+                        let valorCelula = (idxPlanilha !== -1 && rowTokens[idxPlanilha] !== undefined) ? rowTokens[idxPlanilha].trim() : "";
+                        
+                        // CONVERSÃO INTERNA BR: Transforma as vírgulas regionais em ponto lógico para o interpretador
+                        if (col !== 'Data_Hora' && col !== 'State' && valorCelula.includes(',')) {
+                            valorCelula = valorCelula.replace(',', '.');
+                        }
+                        objItem[col] = valorCelula;
                     });
                     dadosMapeados.push(objItem);
                 }
@@ -654,7 +633,8 @@
                 processData(dadosMapeados);
 
             } catch (err) { 
-                document.getElementById('loading').innerHTML = "<p class='text-red-500 font-bold'>⚠️ Erro ao conectar ou processar dados da API do Biorreator.</p>"; 
+                document.getElementById('loading').innerHTML = "<p class='text-red-500 font-bold'>⚠️ Erro fatal ao interpretar o arquivo delimitado de bancada.</p>"; 
+                console.error(err);
             }
         }
 
@@ -704,7 +684,7 @@
                     const text = await res.text();
                     let lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l !== '');
                     if(lines.length > 1) {
-                        let tokensUltima = tokenizarLinhaCSV(lines[lines.length-1]);
+                        let tokensUltima = lines[lines.length-1].split(';');
                         let parsed = parseDate(tokensUltima[0]);
                         if(parsed && (new Date().getTime() - new Date(parsed.replace(/-/g, '/')).getTime()) < toleranceMinutes * 60000) { boxOnline = true; }
                     }
@@ -814,7 +794,8 @@
                         if (valorCelula.includes(':') || valorCelula.includes('-')) valorCelula = "Lag_Phase";
                     } else {
                         let floatLimpo = extrairValorNumericoPuro(valorCelula, c);
-                        valorCelula = (c === 'Temp' || c === 'Calib_Base') ? floatLimpo.toFixed(2) : (c === 'Biomass' || c === 'Mu' ? floatLimpo.toFixed(4) : Math.round(floatLimpo));
+                        // Reconverte o ponto lógico de volta em vírgula para a tabela visual humana ficar igual à planilha
+                        valorCelula = (c === 'Temp' || c === 'Calib_Base') ? floatLimpo.toFixed(2).replace('.', ',') : (c === 'Biomass' || c === 'Mu' ? floatLimpo.toFixed(4).replace('.', ',') : Math.round(floatLimpo));
                     }
                     return `<td class="px-5 py-3 font-medium text-xs whitespace-nowrap">${valorCelula}</td>`;
                 }).join('')}</tr>`;
@@ -826,7 +807,9 @@
             dashboardLoaded = true; window.dispatchEvent(new Event('resize'));
         }
 
-        // GRÁFICO ESPECTRAL DE ALTA RESOLUÇÃO ATUALIZADO CONFORME O DATASHEET AS7343
+        // =========================================================================
+        // 🏁 GRÁFICO ESPECTRAL DEFINITIVO (350 A 1000 NM + LEGENDA CIENTÍFICA) 🏁
+        // =========================================================================
         function renderSpectralChart() {
             if(!currentSpectralData) return; const data = currentSpectralData;
             if(spectralMode === 'time') {
@@ -835,7 +818,7 @@
                 }));
                 Plotly.newPlot('grafico-espectral', traces, { font: { family: 'Inter' }, margin: { l: 40, r: 10, t: 10, b: 40 }, xaxis: { gridcolor: "#f1f5f9" }, yaxis: { gridcolor: "#f1f5f9", rangemode: 'tozero' }, hovermode: 'x unified', showlegend: true, legend: { orientation: 'h', y: -0.2 } }, {responsive: true, displayModeBar: false});
             } else {
-                // EIXO X FIXADO EXATAMENTE CONFORME EXIGIDO: PASSO DE 350 A 1000 NM
+                // EIXO X FIXADO EXATAMENTE CONFORME EXIGIDO: VETOR DE 350 A 1000 NM
                 const wavelengths = []; for(let w = 350; w <= 1000; w += 2) wavelengths.push(w);
                 const latest = {}; Object.keys(DADOS_CANAIS).forEach(ch => { const arr = data.spectral[ch]; latest[ch] = arr[arr.length - 1] || 0; });
                 
@@ -860,9 +843,10 @@
                     font: { family: 'Inter' },
                     margin: { l: 55, r: 20, t: 15, b: 50 },
                     xaxis: { 
-                        title: { text: "wavelength / λ [nm]", font: { size: 12, weight: 'bold' } },
-                        range: [350, 1000],
+                        title: { text: "wavelength / λ [nm]", font: { size: 12, weight: 'bold' } }, // Legenda científica exata
+                        range: [350, 1000], // Escala rígida travada
                         tickmode: 'array',
+                        // Marcadores idênticos à imagem solicitada
                         tickvals: [350, 400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 900, 950, 1000],
                         ticktext: ['350', '400', '450', '500', '550', '600', '650', '700', '750', '800', '850', '900', '950', '1000'],
                         gridcolor: "#f1f5f9"
