@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -92,7 +92,6 @@
     </nav>
 
     <main class="flex-grow">
-        
         <div id="view-home" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 animate-fade-in">
             <div class="text-center max-w-3xl mx-auto mb-16">
                 <h1 class="text-4xl md:text-5xl font-extrabold text-slate-900 mb-6 tracking-tight">Monitoramento Espectral em <span class="text-transparent bg-clip-text bg-gradient-to-r from-usp-600 to-teal-500">Tempo Real</span></h1>
@@ -275,17 +274,14 @@
                     <div>
                         <label class="block text-sm font-semibold text-slate-700 mb-2">Tolerância Offline (Minutos)</label>
                         <input type="number" id="config-tolerance" class="w-full border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-usp-500 outline-none transition-all">
-                        <p class="text-[11px] text-slate-500 mt-2 leading-relaxed">Tempo máximo sem receber dados antes de marcar o biorreator como <span class="text-red-500 font-bold">🔴 Offline</span>.</p>
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-slate-700 mb-2">Visualização (Dias)</label>
                         <input type="number" id="config-dias-vis" class="w-full border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-usp-500 outline-none transition-all">
-                        <p class="text-[11px] text-slate-500 mt-2 leading-relaxed">Histórico máximo exibido nos gráficos e tabela na tela.</p>
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-slate-700 mb-2">Exportação CSV (Dias)</label>
                         <input type="number" id="config-dias-down" class="w-full border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-usp-500 outline-none transition-all">
-                        <p class="text-[11px] text-slate-500 mt-2 leading-relaxed">Limite de dias exportados no momento do download.</p>
                     </div>
                 </div>
 
@@ -299,12 +295,10 @@
                             <span id="toggle-label" class="text-xs font-bold text-slate-500 uppercase">Desligada</span>
                         </div>
                         <input type="hidden" id="config-refresh-enabled" value="false">
-                        <p class="text-[11px] text-slate-500 mt-2 leading-relaxed">Habilita ou desabilita o recarregamento automático dos dados.</p>
                     </div>
                     <div id="container-refresh-interval" class="hidden">
                         <label class="block text-sm font-semibold text-slate-700 mb-2">Intervalo de Atualização (Min)</label>
                         <input type="number" id="config-refresh-interval" class="w-full border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-usp-500 outline-none transition-all">
-                        <p class="text-[11px] text-slate-500 mt-2 leading-relaxed">Frequência em que os dados serão updated na tela.</p>
                     </div>
                 </div>
 
@@ -335,14 +329,6 @@
                     <div>
                         <label class="block text-sm font-semibold text-slate-700 mb-2">URL da API Segura (Web App)</label>
                         <input type="text" id="new-sensor-id" placeholder="https://script.google.com/macros/s/..." class="w-full border border-slate-200 rounded-xl p-3 font-mono text-sm outline-none focus:ring-2 focus:ring-usp-500">
-                        
-                        <div class="mt-4">
-                            <span class="text-[11px] font-bold text-slate-600">Onde encontro o URL?</span>
-                            <p class="text-[11px] text-slate-400 mb-2">Copie e cole o link inteiro fornecido no Google Apps Script após realizar a implantação:</p>
-                            <div class="bg-slate-50 border border-slate-200 p-2 rounded-lg text-[10px] font-mono break-all leading-relaxed text-slate-500">
-                                https://script.google.com/macros/s/<span class="bg-yellow-200 text-yellow-900 font-bold px-1 rounded">AKfycb...EXEMPLO...</span>/exec
-                            </div>
-                        </div>
                     </div>
                 </div>
 
@@ -400,19 +386,20 @@
             'F1', 'F2', 'FZ', 'F3', 'F4', 'FY', 'F5', 'FXL', 'F6', 'F7', 'F8', 'FNI', 'CLR'
         ];
 
+        // CONFIGURAÇÃO DOS CANAIS AS7343 CONFORME O DATASHEET
         const DADOS_CANAIS = {
-            'F1':  {onda: 'F1 (405nm)',  peak: 405, sigma: 12, cor: '#4f46e5', dash: 'solid'},
-            'F2':  {onda: 'F2 (425nm)',  peak: 425, sigma: 12, cor: '#4338ca', dash: 'solid'},
-            'FZ':  {onda: 'FZ (450nm)',  peak: 450, sigma: 14, cor: '#2563eb', dash: 'solid'},
-            'F3':  {onda: 'F3 (475nm)',  peak: 475, sigma: 14, cor: '#0284c7', dash: 'solid'},
-            'F4':  {onda: 'F4 (515nm)',  peak: 515, sigma: 14, cor: '#059669', dash: 'solid'},
-            'FY':  {onda: 'FY (555nm)',  peak: 555, sigma: 14, cor: '#16a34a', dash: 'solid'},
-            'F5':  {onda: 'F5 (550nm)',  peak: 550, sigma: 14, cor: '#84cc16', dash: 'solid'},
-            'FXL': {onda: 'FXL (600nm)', peak: 600, sigma: 16, cor: '#ea580c', dash: 'solid'},
-            'F6':  {onda: 'F6 (640nm)',  peak: 640, sigma: 16, cor: '#dc2626', dash: 'solid'},
-            'F7':  {onda: 'F7 (690nm)',  peak: 690, sigma: 16, cor: '#b91c1c', dash: 'solid'},
-            'F8':  {onda: 'F8 (745nm)',  peak: 745, sigma: 18, cor: '#7f1d1d', dash: 'solid'},
-            'FNI': {onda: 'NIR (855nm)', peak: 855, sigma: 30, cor: '#1e293b', dash: 'solid'},
+            'F1':  {onda: 'F1 (405nm)',  peak: 405, sigma: 15, cor: '#4B0082', dash: 'solid'},
+            'F2':  {onda: 'F2 (425nm)',  peak: 425, sigma: 15, cor: '#4169E1', dash: 'solid'},
+            'FZ':  {onda: 'FZ (450nm)',  peak: 450, sigma: 17, cor: '#0000FF', dash: 'solid'},
+            'F3':  {onda: 'F3 (475nm)',  peak: 475, sigma: 17, cor: '#008B8B', dash: 'solid'},
+            'F4':  {onda: 'F4 (515nm)',  peak: 515, sigma: 17, cor: '#00FF00', dash: 'solid'},
+            'FY':  {onda: 'FY (555nm)',  peak: 555, sigma: 18, cor: '#9ACD32', dash: 'solid'},
+            'F5':  {onda: 'F5 (550nm)',  peak: 550, sigma: 18, cor: '#228B22', dash: 'solid'},
+            'FXL': {onda: 'FXL (600nm)', peak: 600, sigma: 20, cor: '#FF8C00', dash: 'solid'},
+            'F6':  {onda: 'F6 (640nm)',  peak: 640, sigma: 20, cor: '#FF4500', dash: 'solid'},
+            'F7':  {onda: 'F7 (690nm)',  peak: 690, sigma: 20, cor: '#FF0000', dash: 'solid'},
+            'F8':  {onda: 'F8 (745nm)',  peak: 745, sigma: 22, cor: '#8B0000', dash: 'solid'},
+            'FNI': {onda: 'NIR (855nm)', peak: 855, sigma: 25, cor: '#800080', dash: 'solid'},
             'CLR': {onda: 'VIS (Clear)', peak: 560, sigma: 130, cor: '#64748b', dash: 'dash'}
         };
 
@@ -424,6 +411,7 @@
             'n/a': { bg: '#ffffff', border: '#e2e8f0', text: '#94a3b8' }
         };
 
+        // PARSER DE ENGENHARIA - SÓ ACEITA PONTO COMO DECIMAL PARA CÁLCULO LOGÍCO
         function extrairValorNumericoPuro(valor, chaveColuna) {
             if (valor === undefined || valor === null) return 0;
             let str = valor.toString().trim();
@@ -623,9 +611,6 @@
             processData(mockRows); switchView('dashboard');
         }
 
-        // ==========================================
-        // 🚨 NÚCLEO MODIFICADO CONTRA TRAVAMENTO 🚨
-        // ==========================================
         async function loadDashboardData() {
             if (Object.keys(biorreatores).length === 0) { switchView('settings'); return; }
             if (!activeSensorId) activeSensorId = Object.values(biorreatores)[0];
@@ -638,10 +623,8 @@
                 const response = await fetch(`${activeSensorId}?senha=${encodeURIComponent(sessaoSenha)}&_t=${Date.now()}`);
                 const csvText = await response.text();
                 
-                // Trata e limpa todas as quebras de linha enviadas pelo loop do Apps Script
                 let linesRaw = csvText.split(/\r?\n/).map(line => line.trim()).filter(line => line !== '');
                 
-                // PROTEÇÃO RADICAL: Se houver 1 ou menos linhas, ou se o retorno indicar erro de credencial
                 if (linesRaw.length <= 1 || csvText.includes("Acesso Negado") || csvText.includes("Comando Inválido")) {
                     exibirDashboardVazio();
                     return;
@@ -662,7 +645,6 @@
                     dadosMapeados.push(objItem);
                 }
 
-                // Nova dupla checagem: Se após processar as linhas nenhum dado estruturado válido restou
                 if (dadosMapeados.length === 0) {
                     exibirDashboardVazio();
                     return;
@@ -676,7 +658,6 @@
             }
         }
 
-        // FUNÇÃO COMPLEMENTAR AUTOMÁTICA DE ZERO-DATA
         function exibirDashboardVazio() {
             window.headersGlobal = ORDEM_ESTRUTURAL_COLUNAS;
             window.currentRawData = [];
@@ -692,11 +673,9 @@
             document.getElementById('card-fase').style.backgroundColor = "#ffffff";
             document.getElementById('card-fase').style.borderColor = "#e2e8f0";
             
-            // Purga os gráficos para evitar erros fatais internos do Plotly Engine
             try { Plotly.purge('grafico-cinetica'); } catch(e){}
             try { Plotly.purge('grafico-espectral'); } catch(e){}
             
-            // Cria tabelas informativas limpas
             document.getElementById('tabela-head').innerHTML = ORDEM_ESTRUTURAL_COLUNAS.map(c => `<th class="px-5 py-4 whitespace-nowrap">${c}</th>`).join('');
             document.getElementById('tabela-body').innerHTML = `<tr><td colspan="${ORDEM_ESTRUTURAL_COLUNAS.length}" class="px-5 py-8 text-center text-slate-400 italic font-medium">Nenhum registro encontrado. Aguardando transmissões do ESP32-C3...</td></tr>`;
             
@@ -708,9 +687,8 @@
 
             document.getElementById('loading').style.display = 'none';
             document.getElementById('dashboard-content').style.display = 'block';
-            document.getElementById('rodape-data').innerText = `Atualizado (Sem Dados): ${new Date().toLocaleString('pt-BR')}`;
+            document.getElementById('rodape-data').innerText = `Atualizado (Vazio): ${new Date().toLocaleString('pt-BR')}`;
             dashboardLoaded = true;
-            window.dispatchEvent(new Event('resize'));
         }
 
         async function updateFleetStatus() {
@@ -848,6 +826,7 @@
             dashboardLoaded = true; window.dispatchEvent(new Event('resize'));
         }
 
+        // GRÁFICO ESPECTRAL DE ALTA RESOLUÇÃO ATUALIZADO CONFORME O DATASHEET AS7343
         function renderSpectralChart() {
             if(!currentSpectralData) return; const data = currentSpectralData;
             if(spectralMode === 'time') {
@@ -856,10 +835,12 @@
                 }));
                 Plotly.newPlot('grafico-espectral', traces, { font: { family: 'Inter' }, margin: { l: 40, r: 10, t: 10, b: 40 }, xaxis: { gridcolor: "#f1f5f9" }, yaxis: { gridcolor: "#f1f5f9", rangemode: 'tozero' }, hovermode: 'x unified', showlegend: true, legend: { orientation: 'h', y: -0.2 } }, {responsive: true, displayModeBar: false});
             } else {
-                const wavelengths = []; for(let w = 380; w <= 900; w += 2) wavelengths.push(w);
+                // EIXO X FIXADO EXATAMENTE CONFORME EXIGIDO: PASSO DE 350 A 1000 NM
+                const wavelengths = []; for(let w = 350; w <= 1000; w += 2) wavelengths.push(w);
                 const latest = {}; Object.keys(DADOS_CANAIS).forEach(ch => { const arr = data.spectral[ch]; latest[ch] = arr[arr.length - 1] || 0; });
                 
-                let traces = ['F1', 'F2', 'FZ', 'F3', 'F4', 'FY', 'F5', 'FXL', 'F6', 'F7', 'F8', 'FNI', 'CLR'].map(ch => {
+                let ordens_canais = ['F1', 'F2', 'FZ', 'F3', 'F4', 'FY', 'F5', 'FXL', 'F6', 'F7', 'F8', 'FNI', 'CLR'];
+                let traces = ordens_canais.map(ch => {
                     const info = DADOS_CANAIS[ch]; const amplitude = latest[ch] || 0.1;
                     const intensities = wavelengths.map(w => amplitude * Math.exp(-Math.pow(w - info.peak, 2) / (2 * Math.pow(info.sigma, 2))));
                     
@@ -869,12 +850,35 @@
                         name: info.onda, 
                         type: 'scatter', 
                         mode: 'lines', 
-                        line: { color: info.cor, width: 2.5, dash: info.dash, shape: 'spline' }, 
-                        fill: (ch === 'CLR') ? 'none' : 'tozeroy', 
-                        fillcolor: info.cor + '15' 
+                        line: { color: info.cor, width: 2, shape: 'spline' }, 
+                        fill: 'tozeroy', 
+                        fillcolor: info.cor + '25' 
                     };
                 });
-                Plotly.newPlot('grafico-espectral', traces, { font: { family: 'Inter' }, margin: { l: 40, r: 20, t: 10, b: 40 }, xaxis: { title: 'Comprimento de Onda (nm)', range: [380, 900], gridcolor: "#f1f5f9" }, yaxis: { title: 'Intensidade Relativa (U.A.)', gridcolor: "#f1f5f9", rangemode: 'tozero' }, showlegend: true, legend: { orientation: 'h', y: -0.2 }, hovermode: 'closest' }, {responsive: true, displayModeBar: false});
+                
+                let layout = {
+                    font: { family: 'Inter' },
+                    margin: { l: 55, r: 20, t: 15, b: 50 },
+                    xaxis: { 
+                        title: { text: "wavelength / λ [nm]", font: { size: 12, weight: 'bold' } },
+                        range: [350, 1000],
+                        tickmode: 'array',
+                        tickvals: [350, 400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 900, 950, 1000],
+                        ticktext: ['350', '400', '450', '500', '550', '600', '650', '700', '750', '800', '850', '900', '950', '1000'],
+                        gridcolor: "#f1f5f9"
+                    },
+                    yaxis: { 
+                        title: { text: "Signals Raw [counts]", font: { size: 12, weight: 'bold' } },
+                        gridcolor: "#f1f5f9", 
+                        rangemode: 'tozero' 
+                    },
+                    showlegend: true, 
+                    legend: { orientation: 'h', y: -0.25 },
+                    hovermode: 'closest',
+                    plot_bgcolor: 'transparent'
+                };
+
+                Plotly.newPlot('grafico-espectral', traces, layout, {responsive: true, displayModeBar: false});
             }
         }
 
@@ -882,11 +886,11 @@
             spectralMode = mode;
             document.getElementById('btn-mode-time').className = (mode === 'time') ? "px-3 py-1 text-[10px] font-bold rounded-md bg-white shadow-sm text-usp-600" : "px-3 py-1 text-[10px] font-bold rounded-md text-slate-500";
             document.getElementById('btn-mode-wave').className = (mode === 'wave') ? "px-3 py-1 text-[10px] font-bold rounded-md bg-white shadow-sm text-usp-600" : "px-3 py-1 text-[10px] font-bold rounded-md text-slate-500";
-            if(dashboardLoaded && currentSpectralData && currentSpectralData.dates.length > 0) renderSpectralChart();
+            if(dashboardLoaded) renderSpectralChart();
         }
 
         function downloadCSV() {
-            if(!window.currentRawData || window.currentRawData.length === 0) return;
+            if(!window.currentRawData) return;
             let csvRows = window.currentRawData.map(obj => ORDEM_ESTRUTURAL_COLUNAS.map(h => obj[h]));
             csvRows.unshift(ORDEM_ESTRUTURAL_COLUNAS);
             const blob = new Blob([Papa.unparse(csvRows)], { type: 'text/csv;charset=utf-8;' });
