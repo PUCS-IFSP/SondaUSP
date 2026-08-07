@@ -197,7 +197,8 @@
             </div>
 
             <div id="dashboard-content" class="hidden">
-                    <!-- INDICADOR: TEMPERATURA (agora na posição 1 - substituiu Biomassa) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <!-- INDICADOR 1: TEMPERATURA (Posição 1) -->
                     <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                         <h4 class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Temperatura</h4>
                         <div class="flex items-baseline gap-2">
@@ -206,8 +207,7 @@
                         </div>
                     </div>
 
-                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    <!-- INDICADOR: BIOMASSA ESTIMADA (agora na posição 2 - substituiu Temperatura) -->
+                    <!-- INDICADOR 2: BIOMASSA ESTIMADA (Posição 2) -->
                     <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden">
                         <h4 class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Biomassa Estimada</h4>
                         <div class="flex items-baseline gap-2">
@@ -217,7 +217,7 @@
                         <p class="text-[10px] text-slate-400 mt-2">Valor temporário - aguardando integração</p>
                     </div>
 
-                    <!-- INDICADOR: CRESCIMENTO (μ) -->
+                    <!-- INDICADOR 3: CRESCIMENTO (μ) (Posição 3) -->
                     <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                         <h4 class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Crescimento (μ)</h4>
                         <div class="flex items-baseline gap-2">
@@ -227,7 +227,7 @@
                         <p class="text-[10px] text-slate-400 mt-2">Valor temporário - aguardando integração</p>
                     </div>
 
-                    <!-- INDICADOR: ESTADO ATUAL -->
+                    <!-- INDICADOR 4: ESTADO ATUAL (Posição 4) -->
                     <div id="card-fase" class="p-6 rounded-2xl border text-left shadow-sm flex flex-col justify-between bg-white">
                         <h4 class="text-slate-700 text-xs font-bold uppercase tracking-wider mb-2 opacity-80">Estado Atual</h4>
                         <p id="metrica-fase" class="text-2xl font-black text-slate-800 capitalize">---------</p>
@@ -946,11 +946,11 @@
             let ultimoRaw = filteredRows[filteredRows.length - 1];
             let ultimo = {}; for (let k in ultimoRaw) ultimo[k.trim()] = ultimoRaw[k];
 
-            // BIOMASSA ESTIMADA: mantido em 0 (temporário)
-            document.getElementById('metrica-biomassa').innerText = "0";
-            
             // TEMPERATURA: buscando da coluna Temp (funcionando normalmente)
             document.getElementById('metrica-temp').innerText = (parseFloat(ultimo['Temp']) || 0).toFixed(2);
+            
+            // BIOMASSA ESTIMADA: mantido em 0 (temporário)
+            document.getElementById('metrica-biomassa').innerText = "0";
             
             // CRESCIMENTO (μ): mantido em 0 (temporário)
             document.getElementById('metrica-mu').innerText = "0";
