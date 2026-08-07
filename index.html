@@ -197,8 +197,17 @@
             </div>
 
             <div id="dashboard-content" class="hidden">
+                    <!-- INDICADOR: TEMPERATURA (agora na posição 1 - substituiu Biomassa) -->
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                        <h4 class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Temperatura</h4>
+                        <div class="flex items-baseline gap-2">
+                            <p id="metrica-temp" class="text-3xl font-extrabold text-slate-900">--</p>
+                            <span class="text-slate-500 font-medium">°C</span>
+                        </div>
+                    </div>
+
                  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    <!-- INDICADOR: BIOMASSA ESTIMADA (agora na posição 1 - substituiu Temperatura) -->
+                    <!-- INDICADOR: BIOMASSA ESTIMADA (agora na posição 2 - substituiu Temperatura) -->
                     <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden">
                         <h4 class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Biomassa Estimada</h4>
                         <div class="flex items-baseline gap-2">
@@ -206,15 +215,6 @@
                             <span class="text-slate-500 font-medium">g/L</span>
                         </div>
                         <p class="text-[10px] text-slate-400 mt-2">Valor temporário - aguardando integração</p>
-                    </div>
-
-                    <!-- INDICADOR: TEMPERATURA (agora na posição 2 - substituiu Biomassa) -->
-                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                        <h4 class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Temperatura</h4>
-                        <div class="flex items-baseline gap-2">
-                            <p id="metrica-temp" class="text-3xl font-extrabold text-slate-900">--</p>
-                            <span class="text-slate-500 font-medium">°C</span>
-                        </div>
                     </div>
 
                     <!-- INDICADOR: CRESCIMENTO (μ) -->
@@ -410,7 +410,7 @@
         
         // ⚠️ ⚠️ ⚠️ ATENÇÃO: Substitua esta URL pela URL que você está usando atualmente (a que gerou ao vincular a nova planilha) ⚠️ ⚠️ ⚠️
         // Exemplo: const URL_BANCO_CENTRAL = "https://script.google.com/macros/s/AKfycb.../e";
-        const URL_BANCO_CENTRAL = "https://script.google.com/macros/s/AKfycbyStPSqH0H1bS-e-g5LEGvsT80LebN5Ep88Oc7p-tlrX0-6Biahug3nObzREPJ3S0T5/exec";
+        const URL_BANCO_CENTRAL = "https://script.google.com/macros/s/AKfycbwRwVx-b26oag5oABmHpcUJx0NGfDPPhROl0LRds9tg8ImfUuqmM65AkooSeH8oWCi_/exec";
 
         // Variáveis de Sistema
         let biorreatores = {};
