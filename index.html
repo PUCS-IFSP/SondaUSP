@@ -1,4 +1,3 @@
-//CODIGO PADRÃO FEITO COM O LUIZ
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -34,7 +33,6 @@
         .nav-link.active { color: #16a34a; border-bottom: 2px solid #16a34a; font-weight: 600; }
         .nav-link:hover:not(.active) { color: #15803d; }
         
-        /* Gradients para os cards da Home */
         .card-gradient-1 { background: linear-gradient(135deg, #dcfce7 0%, #f0fdf4 100%); }
         .card-gradient-2 { background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%); }
         .card-gradient-3 { background: linear-gradient(135deg, #fef3c7 0%, #fffbeb 100%); }
@@ -44,6 +42,82 @@
             to { opacity: 1; transform: translateY(0); }
         }
         .animate-fade-in { animation: fade-in 0.4s ease-out forwards; }
+
+        /* Estilos para os checkboxes dos canais */
+        .channel-checkbox {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #cbd5e1;
+            border-radius: 4px;
+            outline: none;
+            cursor: pointer;
+            position: relative;
+            flex-shrink: 0;
+            transition: all 0.2s ease;
+        }
+        .channel-checkbox:checked {
+            border-color: transparent;
+        }
+        .channel-checkbox:checked::after {
+            content: '✓';
+            position: absolute;
+            top: -2px;
+            left: 1px;
+            font-size: 14px;
+            font-weight: bold;
+            color: white;
+        }
+        .channel-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            padding: 4px 10px;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            font-size: 12px;
+            font-weight: 500;
+            user-select: none;
+            border: 1px solid transparent;
+        }
+        .channel-label:hover {
+            background-color: #f1f5f9;
+            border-color: #e2e8f0;
+        }
+        .channel-color-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+        .channel-checkbox-wrapper {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+        .select-all-btn {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 4px 14px;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: #475569;
+        }
+        .select-all-btn:hover {
+            background: #f1f5f9;
+            border-color: #94a3b8;
+        }
+        .select-all-btn.active {
+            background: #16a34a;
+            color: white;
+            border-color: #16a34a;
+        }
     </style>
 </head>
 <body class="text-slate-800 antialiased min-h-screen flex flex-col relative overflow-x-hidden">
@@ -89,7 +163,6 @@
                     <a onclick="switchView('home')" id="nav-home" class="nav-link active py-5 text-xs md:text-sm uppercase tracking-wide text-slate-600 whitespace-nowrap">Projeto</a>
                     <a onclick="switchView('dashboard')" id="nav-dashboard" class="nav-link py-5 text-xs md:text-sm uppercase tracking-wide text-slate-600 whitespace-nowrap">Dashboard</a>
                     <a onclick="switchView('settings')" id="nav-settings" class="nav-link py-5 text-xs md:text-sm uppercase tracking-wide text-slate-600 whitespace-nowrap">Configurações</a>
-                    <!-- Adicionado Botão de Sair no Navbar -->
                     <a onclick="logout()" class="py-5 text-xs md:text-sm uppercase tracking-wide text-red-500 hover:text-red-700 font-bold whitespace-nowrap cursor-pointer transition-colors ml-4 md:ml-8 flex items-center gap-1">
                         <svg class="w-4 h-4 hidden md:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
                         Sair
@@ -102,9 +175,8 @@
     <!-- CONTEÚDO PRINCIPAL -->
     <main class="flex-grow">
         
-        <!-- VIEW: HOME (RESTAURADA) -->
+        <!-- VIEW: HOME -->
         <div id="view-home" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 animate-fade-in">
-            <!-- Hero Section -->
             <div class="text-center max-w-3xl mx-auto mb-16">
                 <h1 class="text-4xl md:text-5xl font-extrabold text-slate-900 mb-6 tracking-tight">Monitoramento Espectral em <span class="text-transparent bg-clip-text bg-gradient-to-r from-usp-600 to-teal-500">Tempo Real</span></h1>
                 <p class="text-lg text-slate-600 mb-8 leading-relaxed">
@@ -120,10 +192,8 @@
                 </div>
             </div>
 
-            <!-- Insights Cards -->
             <h2 class="text-2xl font-bold text-slate-800 mb-8 text-center">Como o sistema funciona?</h2>
             <div class="grid md:grid-cols-3 gap-8 mb-16">
-                <!-- Card 1 -->
                 <div class="card-gradient-1 p-8 rounded-3xl border border-green-100 shadow-sm relative overflow-hidden group">
                     <div class="w-12 h-12 bg-green-500 text-white rounded-xl flex items-center justify-center mb-6 shadow-md">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
@@ -131,15 +201,13 @@
                     <h3 class="text-xl font-bold text-slate-900 mb-3">IoT na Borda (Edge)</h3>
                     <p class="text-slate-600 text-sm leading-relaxed">Hardware baseado no ESP32-C3 coleta dados em tempo real. A captura automatizada elimina a necessidade de amostragens manuais destrutivas e frequentes, economizando tempo e reagentes.</p>
                 </div>
-                <!-- Card 2 -->
                 <div class="card-gradient-2 p-8 rounded-3xl border border-blue-100 shadow-sm">
                     <div class="w-12 h-12 bg-blue-500 text-white rounded-xl flex items-center justify-center mb-6 shadow-md">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
                     </div>
                     <h3 class="text-xl font-bold text-slate-900 mb-3">Assinatura Espectral</h3>
-                    <p class="text-slate-600 text-sm leading-relaxed">Um sensor multiespectral de 8 canais (415nm a 680nm) captura a fluorescência e absorbância das células, identificando o estado fisiológico e a concentração de pigmentos como a clorofila-a.</p>
+                    <p class="text-slate-600 text-sm leading-relaxed">O sensor multiespectral de 14 canais (380 nm a 1000 nm) captura a absorbância e fluorescência das células, identificando o estado fisiológico e a concentração de pigmentos como a clorofila-a.</p>
                 </div>
-                <!-- Card 3 -->
                 <div class="card-gradient-3 p-8 rounded-3xl border border-yellow-100 shadow-sm">
                     <div class="w-12 h-12 bg-yellow-500 text-white rounded-xl flex items-center justify-center mb-6 shadow-md">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
@@ -149,7 +217,6 @@
                 </div>
             </div>
 
-            <!-- Info Técnica -->
             <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
                 <div class="flex items-center gap-4 mb-4">
                     <div class="w-2 h-8 bg-usp-500 rounded-full"></div>
@@ -206,14 +273,8 @@
             </div>
 
             <div id="dashboard-content" class="hidden">
-                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden">
-                        <h4 class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Biomassa Estimada</h4>
-                        <div class="flex items-baseline gap-2">
-                            <p id="metrica-biomassa" class="text-3xl font-extrabold text-slate-900">--</p>
-                            <span class="text-slate-500 font-medium">g/L</span>
-                        </div>
-                    </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <!-- INDICADOR 1: TEMPERATURA -->
                     <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                         <h4 class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Temperatura</h4>
                         <div class="flex items-baseline gap-2">
@@ -221,16 +282,32 @@
                             <span class="text-slate-500 font-medium">°C</span>
                         </div>
                     </div>
+
+                    <!-- INDICADOR 2: BIOMASSA ESTIMADA -->
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden">
+                        <h4 class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Biomassa Estimada</h4>
+                        <div class="flex items-baseline gap-2">
+                            <p id="metrica-biomassa" class="text-3xl font-extrabold text-slate-900">0</p>
+                            <span class="text-slate-500 font-medium">g/L</span>
+                        </div>
+                        <p class="text-[10px] text-slate-400 mt-2">Valor temporário - aguardando integração</p>
+                    </div>
+
+                    <!-- INDICADOR 3: CRESCIMENTO (μ) -->
                     <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                         <h4 class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Crescimento (μ)</h4>
                         <div class="flex items-baseline gap-2">
-                            <p id="metrica-mu" class="text-3xl font-extrabold text-slate-900">--</p>
+                            <p id="metrica-mu" class="text-3xl font-extrabold text-slate-900">0</p>
                             <span class="text-slate-500 font-medium">h⁻¹</span>
                         </div>
+                        <p class="text-[10px] text-slate-400 mt-2">Valor temporário - aguardando integração</p>
                     </div>
+
+                    <!-- INDICADOR 4: ESTADO ATUAL -->
                     <div id="card-fase" class="p-6 rounded-2xl border text-left shadow-sm flex flex-col justify-between bg-white">
                         <h4 class="text-slate-700 text-xs font-bold uppercase tracking-wider mb-2 opacity-80">Estado Atual</h4>
-                        <p id="metrica-fase" class="text-2xl font-black text-slate-800 capitalize">--</p>
+                        <p id="metrica-fase" class="text-2xl font-black text-slate-800 capitalize">---------</p>
+                        <p class="text-[10px] text-slate-400 mt-2">Valor temporário - aguardando integração</p>
                     </div>
                 </div>
 
@@ -239,21 +316,35 @@
                         <h2 class="text-lg font-bold text-slate-800 mb-4">Cinética de Crescimento</h2>
                         <div id="grafico-cinetica" class="w-full h-[450px]"></div>
                     </div>
+                    
                     <div class="w-full bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
                         <div class="flex justify-between items-center mb-4">
                             <h2 class="text-lg font-bold text-slate-800">Assinatura Espectral</h2>
                             <div class="flex bg-slate-100 p-1 rounded-lg">
                                 <button onclick="setSpectralMode('time')" id="btn-mode-time" class="px-3 py-1 text-[10px] font-bold rounded-md bg-white shadow-sm text-usp-600 transition-all">HISTÓRICO</button>
                                 <button onclick="setSpectralMode('wave')" id="btn-mode-wave" class="px-3 py-1 text-[10px] font-bold rounded-md text-slate-500 hover:text-slate-700 transition-all">PERFIL (nm)</button>
+                                <button onclick="setSpectralMode('trend')" id="btn-mode-trend" class="px-3 py-1 text-[10px] font-bold rounded-md text-slate-500 hover:text-slate-700 transition-all">TENDÊNCIA</button>
                             </div>
                         </div>
                         <div id="grafico-espectral" class="w-full flex-grow min-h-[400px]"></div>
+                        
+                        <!-- Painel de seleção de canais para o modo TENDÊNCIA -->
+                        <div id="channel-selector-panel" class="mt-4 hidden">
+                            <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
+                                <span class="text-xs font-semibold text-slate-600">Selecione os canais para visualizar:</span>
+                                <div class="flex gap-2">
+                                    <button onclick="selectAllChannels()" class="select-all-btn" id="btn-select-all">Selecionar Todos</button>
+                                    <button onclick="deselectAllChannels()" class="select-all-btn">Desmarcar Todos</button>
+                                </div>
+                            </div>
+                            <div id="channel-checkboxes" class="channel-checkbox-wrapper"></div>
+                        </div>
                     </div>
                 </div>
 
                 <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm mb-8">
                     <h2 class="text-lg font-bold text-slate-800 mb-6">Sensores Fotônicos (U.A.)</h2>
-                    <div id="grid-canais" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-11 gap-3"></div>
+                    <div id="grid-canais" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-13 gap-3"></div>
                 </div>
 
                 <!-- DADOS BRUTOS -->
@@ -290,7 +381,6 @@
                 <p class="text-slate-500 mt-1">Gerencie os parâmetros globais e os sensores vinculados à API Segura do Apps Script.</p>
             </div>
 
-            <!-- Parâmetros Globais -->
             <div class="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm relative mb-10">
                 <h4 class="text-md font-bold text-slate-800 mb-6 flex items-center gap-2">
                     <span class="text-slate-400">⚙️</span> Parâmetros Globais
@@ -338,7 +428,6 @@
                 </button>
             </div>
 
-            <!-- Header da Lista de Sensores com Botão Novo -->
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-xl font-bold text-slate-800">Sensores Cadastrados</h2>
                 <button onclick="showAddForm()" id="btn-show-add-form" class="bg-usp-600 hover:bg-usp-700 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md transition-all">
@@ -346,7 +435,6 @@
                 </button>
             </div>
 
-            <!-- Adicionar Novo Biorreator (OCULTO POR PADRÃO) -->
             <div id="sensor-form-container" class="hidden bg-white p-8 rounded-3xl border border-slate-200 shadow-sm relative mb-8 animate-fade-in">
                 <div id="form-mode-badge" class="absolute top-0 right-0 mt-4 mr-8 text-[10px] font-bold text-usp-600 bg-usp-50 px-2 py-1 rounded-md hidden uppercase tracking-widest border border-usp-200">Modo de Edição</div>
                 <h4 id="sensor-form-title" class="text-md font-bold text-slate-800 mb-6 flex items-center gap-2">
@@ -383,7 +471,6 @@
                 </div>
             </div>
 
-            <!-- Lista -->
             <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
                 <table class="w-full text-sm text-left">
                     <thead class="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold tracking-widest">
@@ -411,10 +498,9 @@
         // --- LÓGICA DE SESSÃO DA API SEGURA ---
         let sessaoSenha = sessionStorage.getItem('cepema_auth_token') || '';
         
-        // URL DO BANCO CENTRAL DEFINIDA GLOBALMENTE PARA TODO O SISTEMA
-        const URL_BANCO_CENTRAL = "https://script.google.com/macros/s/AKfycbyStPSqH0H1bS-e-g5LEGvsT80LebN5Ep88Oc7p-tlrX0-6Biahug3nObzREPJ3S0T5/exec";
+        const URL_BANCO_CENTRAL = "https://script.google.com/macros/s/AKfycbwRwVx-b26oag5oABmHpcUJx0NGfDPPhROl0LRds9tg8ImfUuqmM65AkooSeH8oWCi_/exec";
 
-        // Variáveis de Sistema (Iniciam limpas na memória - 100% livres de cache)
+        // Variáveis de Sistema
         let biorreatores = {};
         let activeSensorId = null;
         let toleranceMinutes = 120;
@@ -427,19 +513,25 @@
         let refreshIntervalId = null;
         let dashboardLoaded = false;
         let currentSpectralData = null;
+        let selectedChannels = {};
 
+        // =====================================================
+        // DADOS_CANAIS
+        // =====================================================
         const DADOS_CANAIS = {
-            'F1': {onda: '415nm', peak: 415, sigma: 12, cor: '#6366f1', dash: 'solid'},
-            'F2': {onda: '445nm', peak: 445, sigma: 12, cor: '#3b82f6', dash: 'solid'},
-            'F3': {onda: '480nm', peak: 480, sigma: 12, cor: '#0ea5e9', dash: 'solid'},
-            'F4': {onda: '515nm', peak: 515, sigma: 12, cor: '#10b981', dash: 'solid'},
-            'F5': {onda: '555nm', peak: 555, sigma: 12, cor: '#84cc16', dash: 'solid'},
-            'F6': {onda: '590nm', peak: 590, sigma: 12, cor: '#eab308', dash: 'solid'},
-            'F7': {onda: '630nm', peak: 630, sigma: 12, cor: '#f97316', dash: 'solid'},
-            'F8': {onda: '680nm', peak: 680, sigma: 12, cor: '#ef4444', dash: 'solid'},
-            'clr': {onda: 'Clear', peak: 750, sigma: 150, cor: '#475569', dash: 'dash'},
-            'nir': {onda: 'NIR', peak: 910, sigma: 35, cor: '#991b1b', dash: 'solid'},
-            'flk': {onda: 'Flicker', peak: 750, sigma: 220, cor: '#1e3a8a', dash: 'solid'}
+            'F1':  { onda: 'F1',  peak: 405, sigma: 17.0, cor: '#1f77b4', dash: 'solid', nome: 'F1 (405 nm)' },
+            'F2':  { onda: 'F2',  peak: 435, sigma: 10.6, cor: '#ff7f0e', dash: 'solid', nome: 'F2 (435 nm)' },
+            'FZ':  { onda: 'FZ',  peak: 450, sigma: 25.5, cor: '#2ca02c', dash: 'solid', nome: 'FZ (450 nm)' },
+            'F3':  { onda: 'F3',  peak: 475, sigma: 14.9, cor: '#d62728', dash: 'solid', nome: 'F3 (475 nm)' },
+            'F4':  { onda: 'F4',  peak: 510, sigma: 14.9, cor: '#9467bd', dash: 'solid', nome: 'F4 (510 nm)' },
+            'FY':  { onda: 'FY',  peak: 550, sigma: 46.7, cor: '#8c564b', dash: 'solid', nome: 'FY (550 nm)' },
+            'F5':  { onda: 'F5',  peak: 570, sigma: 14.9, cor: '#e377c2', dash: 'solid', nome: 'F5 (570 nm)' },
+            'FXL': { onda: 'FXL', peak: 610, sigma: 36.1, cor: '#7f7f7f', dash: 'solid', nome: 'FXL (610 nm)' },
+            'F6':  { onda: 'F6',  peak: 650, sigma: 14.9, cor: '#bcbd22', dash: 'solid', nome: 'F6 (650 nm)' },
+            'F7':  { onda: 'F7',  peak: 690, sigma: 19.1, cor: '#17becf', dash: 'solid', nome: 'F7 (690 nm)' },
+            'F8':  { onda: 'F8',  peak: 745, sigma: 19.1, cor: '#1a55ff', dash: 'solid', nome: 'F8 (745 nm)' },
+            'FNI': { onda: 'NIR', peak: 855, sigma: 22.9, cor: '#a93226', dash: 'solid', nome: 'FNI (855 nm)' },
+            'CLR': { onda: 'VIS', peak: 550, sigma: 80.0, cor: '#2c3e50', dash: 'dash', nome: 'CLR (VIS)' }
         };
 
         const CORES_FASES = {
@@ -450,12 +542,193 @@
             'N/A': { bg: '#ffffff', border: '#e2e8f0', text: '#94a3b8' }
         };
 
+        // =====================================================
+        // FUNÇÕES DO MODO TENDÊNCIA
+        // =====================================================
+        function initChannelSelector() {
+            const container = document.getElementById('channel-checkboxes');
+            if (!container) return;
+            
+            container.innerHTML = '';
+            const channelKeys = Object.keys(DADOS_CANAIS);
+            
+            // Inicializa todos os canais como selecionados
+            channelKeys.forEach(key => {
+                if (selectedChannels[key] === undefined) {
+                    selectedChannels[key] = true;
+                }
+            });
+
+            channelKeys.forEach(key => {
+                const info = DADOS_CANAIS[key];
+                const wrapper = document.createElement('label');
+                wrapper.className = 'channel-label';
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.className = 'channel-checkbox';
+                checkbox.id = 'chk-' + key;
+                checkbox.checked = selectedChannels[key] !== false;
+                checkbox.style.borderColor = info.cor;
+                checkbox.style.backgroundColor = selectedChannels[key] !== false ? info.cor : 'white';
+                
+                checkbox.addEventListener('change', function() {
+                    if (this.checked) {
+                        this.style.backgroundColor = info.cor;
+                        this.style.borderColor = info.cor;
+                    } else {
+                        this.style.backgroundColor = 'white';
+                        this.style.borderColor = '#cbd5e1';
+                    }
+                    selectedChannels[key] = this.checked;
+                    updateTrendChart();
+                    updateSelectAllButton();
+                });
+                
+                const dot = document.createElement('span');
+                dot.className = 'channel-color-dot';
+                dot.style.backgroundColor = info.cor;
+                if (info.dash === 'dash') {
+                    dot.style.border = '2px dashed ' + info.cor;
+                    dot.style.backgroundColor = 'transparent';
+                }
+                
+                const label = document.createElement('span');
+                label.textContent = info.nome;
+                label.style.color = info.cor;
+                
+                wrapper.appendChild(checkbox);
+                wrapper.appendChild(dot);
+                wrapper.appendChild(label);
+                container.appendChild(wrapper);
+            });
+            
+            updateSelectAllButton();
+        }
+
+        function updateSelectAllButton() {
+            const btn = document.getElementById('btn-select-all');
+            if (!btn) return;
+            
+            const allChecked = Object.keys(DADOS_CANAIS).every(key => selectedChannels[key] !== false);
+            btn.textContent = allChecked ? 'Selecionar Todos ✓' : 'Selecionar Todos';
+            btn.classList.toggle('active', allChecked);
+        }
+
+        function selectAllChannels() {
+            const channelKeys = Object.keys(DADOS_CANAIS);
+            channelKeys.forEach(key => {
+                selectedChannels[key] = true;
+                const checkbox = document.getElementById('chk-' + key);
+                if (checkbox) {
+                    checkbox.checked = true;
+                    checkbox.style.backgroundColor = DADOS_CANAIS[key].cor;
+                    checkbox.style.borderColor = DADOS_CANAIS[key].cor;
+                }
+            });
+            updateSelectAllButton();
+            updateTrendChart();
+        }
+
+        function deselectAllChannels() {
+            const channelKeys = Object.keys(DADOS_CANAIS);
+            channelKeys.forEach(key => {
+                selectedChannels[key] = false;
+                const checkbox = document.getElementById('chk-' + key);
+                if (checkbox) {
+                    checkbox.checked = false;
+                    checkbox.style.backgroundColor = 'white';
+                    checkbox.style.borderColor = '#cbd5e1';
+                }
+            });
+            updateSelectAllButton();
+            updateTrendChart();
+        }
+
+        function updateTrendChart() {
+            if (!currentSpectralData || spectralMode !== 'trend') return;
+            
+            const data = currentSpectralData;
+            const traces = [];
+            
+            Object.keys(DADOS_CANAIS).forEach(key => {
+                if (selectedChannels[key] !== false) {
+                    const info = DADOS_CANAIS[key];
+                    const yData = data.spectral[key] || [];
+                    if (yData.length > 0) {
+                        traces.push({
+                            x: data.dates,
+                            y: yData,
+                            name: info.nome,
+                            type: 'scatter',
+                            mode: 'lines',
+                            line: {
+                                color: info.cor,
+                                width: 2.5,
+                                dash: info.dash || 'solid'
+                            },
+                            hovertemplate: '%{x}<br>%{y:.2f} U.A.<extra></extra>'
+                        });
+                    }
+                }
+            });
+
+            if (traces.length === 0) {
+                // Se nenhum canal selecionado, mostrar mensagem
+                Plotly.newPlot('grafico-espectral', [{
+                    x: [],
+                    y: [],
+                    mode: 'text',
+                    text: ['Selecione pelo menos um canal para visualizar'],
+                    textposition: 'middle center',
+                    textfont: { color: '#94a3b8', size: 16 }
+                }], {
+                    font: { family: 'Inter' },
+                    margin: { l: 40, r: 20, t: 20, b: 50 },
+                    xaxis: { showgrid: false, showticklabels: false },
+                    yaxis: { showgrid: false, showticklabels: false }
+                }, { responsive: true, displayModeBar: false });
+                return;
+            }
+
+            const layout = {
+                font: { family: 'Inter' },
+                margin: { l: 50, r: 30, t: 20, b: 50 },
+                xaxis: {
+                    title: 'Data/Hora',
+                    gridcolor: '#f1f5f9',
+                    tickangle: -45,
+                    ticks: 'outside'
+                },
+                yaxis: {
+                    title: 'Intensidade (U.A.)',
+                    gridcolor: '#f1f5f9',
+                    rangemode: 'tozero'
+                },
+                hovermode: 'x unified',
+                showlegend: true,
+                legend: {
+                    orientation: 'h',
+                    y: -0.2,
+                    x: 0.5,
+                    xanchor: 'center',
+                    font: { size: 11 }
+                }
+            };
+
+            Plotly.newPlot('grafico-espectral', traces, layout, {
+                responsive: true,
+                displayModeBar: false
+            });
+        }
+
+        // =====================================================
+        // FUNÇÕES EXISTENTES
+        // =====================================================
         async function syncDaNuvem() {
             if (!sessaoSenha || !URL_BANCO_CENTRAL) return false;
             
             try {
-                // Adicionando "Anti-Cache" (_t=...) para garantir dados frescos do Google Sheets
-                // 1. Puxa os Biorreatores da aba 'Biorreatores'
                 const resSensores = await fetch(`${URL_BANCO_CENTRAL}?senha=${encodeURIComponent(sessaoSenha)}&action=getSensors&_t=${Date.now()}`);
                 const textoSensores = await resSensores.text();
                 
@@ -468,7 +741,6 @@
                 initSensorsDropdown();
                 renderManageList();
 
-                // 2. Puxa os Parâmetros da aba 'Configuracoes'
                 const resParams = await fetch(`${URL_BANCO_CENTRAL}?senha=${encodeURIComponent(sessaoSenha)}&action=getParams&_t=${Date.now()}`);
                 const textoParams = await resParams.text();
                 
@@ -503,7 +775,6 @@
             
             sessaoSenha = senha;
             
-            // Tenta baixar todos os dados. Se for sucesso, a senha tá correta!
             const sucesso = await syncDaNuvem(); 
             
             if (sucesso) {
@@ -528,12 +799,9 @@
             sessaoSenha = '';
             document.getElementById('input-senha').value = '';
             document.getElementById('msg-erro-login').classList.add('hidden');
-            
-            // Força a tela de bloqueio a aparecer imediatamente
             document.getElementById('login-overlay').classList.remove('hidden');
         }
 
-        // --- SISTEMA DE MODAL ---
         function showModal({ title, message, type = 'alert', confirmText = 'OK', cancelText = 'Cancelar', onConfirm = null }) {
             const modal = document.getElementById('custom-modal');
             const content = document.getElementById('custom-modal-content');
@@ -660,7 +928,6 @@
             autoRefreshEnabled = document.getElementById('config-refresh-enabled').value === 'true';
             autoRefreshInterval = parseInt(document.getElementById('config-refresh-interval').value) || 5;
 
-            // Salva DIRETAMENTE no Banco Central (Google Sheets) sem cache
             const btn = document.getElementById('btn-save-config');
             const txtOriginal = btn.innerText;
             btn.innerText = "Salvando na Nuvem...";
@@ -727,11 +994,7 @@
             switchView('dashboard');
         }
 
-        // =====================================
-        // LÓGICA DE DADOS (API SEGURA)
-        // =====================================
         async function loadDashboardData() {
-            // Se a nuvem estiver vazia, leva para a tela de configurações, mas NÃO remove o bloqueio se deslogado!
             if (Object.keys(biorreatores).length === 0) {
                 switchView('settings');
                 const l = document.getElementById('loading');
@@ -744,13 +1007,11 @@
             }
             if (!activeSensorId) return;
 
-            // Se não estiver logado, barrar tudo
             if (!sessaoSenha) {
                 document.getElementById('login-overlay').classList.remove('hidden');
                 return;
             }
 
-            // VALIDAÇÃO DE SEGURANÇA: Verifica se é o URL da API ou um ID antigo perdido
             if (!activeSensorId.startsWith('http')) {
                 document.getElementById('loading').style.display = 'none';
                 showModal({
@@ -765,14 +1026,12 @@
             document.getElementById('loading').innerHTML = '<svg class="animate-spin h-10 w-10 text-usp-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><p>Comunicando com a API Segura...</p>';
             document.getElementById('dashboard-content').style.display = 'none';
 
-            // Prepara a URL segura com anti-cache
             const urlComSenha = `${activeSensorId}?senha=${encodeURIComponent(sessaoSenha)}&_t=${Date.now()}`;
 
             try {
                 const response = await fetch(urlComSenha);
                 const csvText = await response.text();
 
-                // Detecção de Bloqueio da API
                 if (csvText.includes("Acesso Negado") || csvText.includes("Erro interno") || csvText.includes("Erro:")) {
                     document.getElementById('loading').style.display = 'none';
                     if (csvText.includes("Acesso Negado")) {
@@ -787,22 +1046,41 @@
                     return;
                 }
 
-                // SUCESSO!
                 document.getElementById('login-overlay').classList.add('hidden');
                 document.getElementById('msg-erro-login').classList.add('hidden');
 
                 Papa.parse(csvText, {
                     header: true, skipEmptyLines: true,
-                    complete: (res) => processData(res.data),
-                    error: () => { 
-                        const l = document.getElementById('loading');
-                        if(l) { l.innerHTML = "<p class='text-red-500'>Erro ao ler os dados CSV recebidos da API.</p>"; l.style.display = 'flex'; }
+                    complete: (res) => {
+                        if (!res.data || res.data.length === 0) {
+                            currentSpectralData = null;
+                            window.currentRawData = null;
+                            document.getElementById('dashboard-content').style.display = 'none';
+                            document.getElementById('loading').innerHTML = 
+                                '<p class="text-slate-500 text-center">📭 Nenhuma medição registrada.<br><span class="text-xs">Aguardando a primeira transmissão do ESP32.</span></p>';
+                            document.getElementById('loading').style.display = 'flex';
+                            Plotly.purge('grafico-cinetica');
+                            Plotly.purge('grafico-espectral');
+                            return;
+                        }
+                        processData(res.data);
+                    },
+                    error: (err) => {
+                        console.error("Erro ao parsear CSV:", err);
+                        document.getElementById('loading').innerHTML = 
+                            '<p class="text-red-500">Erro ao interpretar os dados.<br><span class="text-xs">Verifique a planilha e tente novamente.</span></p>';
+                        document.getElementById('loading').style.display = 'flex';
+                        document.getElementById('dashboard-content').style.display = 'none';
                     }
                 });
 
             } catch (err) {
                 const l = document.getElementById('loading');
-                if(l) { l.innerHTML = "<p class='text-red-500'>Erro de comunicação. O servidor do Google pode estar indisponível ou o link está errado.</p>"; l.style.display = 'flex'; }
+                if(l) { 
+                    l.innerHTML = "<p class='text-red-500'>Erro de comunicação. O servidor do Google pode estar indisponível ou o link está errado.</p>"; 
+                    l.style.display = 'flex'; 
+                }
+                document.getElementById('dashboard-content').style.display = 'none';
             }
         }
 
@@ -868,10 +1146,19 @@
             }
         }
 
-        // =====================================
-
         function processData(rawData) {
-            if (!rawData || rawData.length === 0) return;
+            if (!rawData || rawData.length === 0) {
+                console.warn("processData recebeu dados vazios.");
+                currentSpectralData = null;
+                window.currentRawData = null;
+                document.getElementById('dashboard-content').style.display = 'none';
+                document.getElementById('loading').innerHTML = 
+                    '<p class="text-slate-500 text-center">📭 Nenhuma medição registrada.<br><span class="text-xs">Aguardando dados do sensor.</span></p>';
+                document.getElementById('loading').style.display = 'flex';
+                Plotly.purge('grafico-cinetica');
+                Plotly.purge('grafico-espectral');
+                return;
+            }
             let keyDate = Object.keys(rawData[0])[0]; 
             window.currentRawData = rawData;
             let now = new Date().getTime();
@@ -907,26 +1194,23 @@
             let ultimoRaw = filteredRows[filteredRows.length - 1];
             let ultimo = {}; for (let k in ultimoRaw) ultimo[k.trim()] = ultimoRaw[k];
 
-            document.getElementById('metrica-biomassa').innerText = (parseFloat(ultimo['Biomass']) || 0).toFixed(4);
             document.getElementById('metrica-temp').innerText = (parseFloat(ultimo['Temp']) || 0).toFixed(2);
-            document.getElementById('metrica-mu').innerText = (parseFloat(ultimo['Mu']) || 0).toFixed(4);
-            
-            let fase = (ultimo['State'] || 'N/A').toString().toLowerCase();
-            let cfg = CORES_FASES['N/A'];
-            if (fase.includes('lag')) cfg = CORES_FASES['Lag_Phase'];
-            else if (fase.includes('log')) cfg = CORES_FASES['Log_Phase'];
-            else if (fase.includes('station')) cfg = CORES_FASES['Stationary'];
-            else if (fase.includes('death')) cfg = CORES_FASES['Death_Phase'];
+            document.getElementById('metrica-biomassa').innerText = "0";
+            document.getElementById('metrica-mu').innerText = "0";
             
             const mf = document.getElementById('metrica-fase');
-            mf.innerText = (ultimo['State'] || '--').replace(/_/g, ' ');
-            mf.style.color = cfg.text;
-            document.getElementById('card-fase').style.backgroundColor = cfg.bg;
-            document.getElementById('card-fase').style.borderColor = cfg.border;
+            mf.innerText = "---------";
+            mf.style.color = '#94a3b8';
+            document.getElementById('card-fase').style.backgroundColor = '#ffffff';
+            document.getElementById('card-fase').style.borderColor = '#e2e8f0';
 
+            // Gráfico de Cinética
+            const fniData = processed.spectral['FNI'] || [];
+            const fniNormalized = fniData.map(v => v / 1000);
+            
             Plotly.newPlot('grafico-cinetica', [
-                { x: processed.dates, y: processed.biomass, name: 'Biomassa', type: 'scatter', mode: 'lines', line: {color: cfg.text, width: 3, shape: 'spline'}, fill: 'tozeroy', fillcolor: cfg.text + '10' },
-                { x: processed.dates, y: processed.mu, name: 'Taxa μ', type: 'scatter', mode: 'lines', line: {color: '#0ea5e9', width: 2}, yaxis: 'y2' }
+                { x: processed.dates, y: fniNormalized, name: 'Biomassa (proxy)', type: 'scatter', mode: 'lines', line: {color: '#16a34a', width: 3, shape: 'spline'}, fill: 'tozeroy', fillcolor: '#16a34a20' },
+                { x: processed.dates, y: processed.mu.map(() => 0), name: 'Taxa μ', type: 'scatter', mode: 'lines', line: {color: '#0ea5e9', width: 2}, yaxis: 'y2' }
             ], {
                 font: { family: 'Inter' }, plot_bgcolor: 'transparent',
                 margin: { l: 50, r: 20, t: 10, b: 40 }, showlegend: false,
@@ -936,6 +1220,13 @@
                 xaxis: { showticklabels: false, showgrid: false }, xaxis2: { anchor: 'y2', gridcolor: '#f1f5f9' }
             }, {responsive: true, displayModeBar: false});
 
+            // Inicializa o seletor de canais
+            const container = document.getElementById('channel-checkboxes');
+            if (container && !container.children.length) {
+                initChannelSelector();
+            }
+
+            // Renderiza o gráfico espectral
             renderSpectralChart();
 
             document.getElementById('grid-canais').innerHTML = Object.keys(DADOS_CANAIS).map(ch => {
@@ -963,9 +1254,19 @@
             if(!currentSpectralData) return;
             const data = currentSpectralData;
 
+            // Modo TENDÊNCIA
+            if (spectralMode === 'trend') {
+                document.getElementById('channel-selector-panel').classList.remove('hidden');
+                updateTrendChart();
+                return;
+            } else {
+                document.getElementById('channel-selector-panel').classList.add('hidden');
+            }
+
+            // Modo HISTÓRICO
             if(spectralMode === 'time') {
                 let traces = Object.keys(DADOS_CANAIS).map(ch => ({
-                    x: data.dates, y: data.spectral[ch], name: DADOS_CANAIS[ch].onda,
+                    x: data.dates, y: data.spectral[ch], name: DADOS_CANAIS[ch].nome,
                     type: 'scatter', mode: 'lines', line: { color: DADOS_CANAIS[ch].cor, width: 2, dash: DADOS_CANAIS[ch].dash }
                 }));
                 Plotly.newPlot('grafico-espectral', traces, {
@@ -973,28 +1274,37 @@
                     xaxis: { gridcolor: "#f1f5f9" }, yaxis: { gridcolor: "#f1f5f9", rangemode: 'tozero' },
                     hovermode: 'x unified', showlegend: false
                 }, {responsive: true, displayModeBar: false});
-            } else {
+                return;
+            }
+
+            // Modo PERFIL (nm)
+            if(spectralMode === 'wave') {
                 const wavelengths = []; for(let w = 350; w <= 1050; w += 5) wavelengths.push(w);
                 const latest = {}; Object.keys(DADOS_CANAIS).forEach(ch => {
                     const arr = data.spectral[ch];
                     latest[ch] = arr[arr.length - 1] || 0;
                 });
-                const order = ['flk', 'clr', 'nir', 'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8'];
+                const order = ['F1', 'F2', 'FZ', 'F3', 'F4', 'FY', 'F5', 'FXL', 'F6', 'F7', 'F8', 'FNI', 'CLR'];
                 let traces = order.map(ch => {
                     const info = DADOS_CANAIS[ch];
                     const amplitude = latest[ch] || 0.1;
                     const intensities = wavelengths.map(w => amplitude * Math.exp(-Math.pow(w - info.peak, 2) / (2 * Math.pow(info.sigma, 2))));
                     return {
-                        x: wavelengths, y: intensities, name: info.onda, type: 'scatter', mode: 'lines',
-                        line: { color: info.cor, width: (ch === 'clr' ? 2 : 2.5), dash: info.dash, shape: 'spline' },
-                        fill: (ch === 'clr' || ch === 'flk') ? 'none' : 'tozeroy',
+                        x: wavelengths, y: intensities, name: info.nome, type: 'scatter', mode: 'lines',
+                        line: { color: info.cor, width: (ch === 'CLR') ? 2 : 2.5, dash: info.dash, shape: 'spline' },
+                        fill: (ch === 'CLR') ? 'none' : 'tozeroy',
                         fillcolor: info.cor + '25'
                     };
                 });
                 Plotly.newPlot('grafico-espectral', traces, {
                     font: { family: 'Inter' }, margin: { l: 40, r: 20, t: 10, b: 40 },
-                    xaxis: { title: 'nm', range: [350, 1050], gridcolor: "#f1f5f9" },
-                    yaxis: { title: 'U.A.', gridcolor: "#f1f5f9", rangemode: 'tozero' },
+                    xaxis: { 
+                        title: 'Wavelength / λ [nm]', 
+                        range: [350, 1000], 
+                        tickvals: [350, 400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 900, 950, 1000],
+                        gridcolor: "#f1f5f9" 
+                    },
+                    yaxis: { title: 'Spectral responsivity', gridcolor: "#f1f5f9", rangemode: 'tozero' },
                     showlegend: false, hovermode: 'closest'
                 }, {responsive: true, displayModeBar: false});
             }
@@ -1004,10 +1314,19 @@
             spectralMode = mode;
             const bt = document.getElementById('btn-mode-time');
             const bw = document.getElementById('btn-mode-wave');
-            if(bt && bw) {
+            const bt2 = document.getElementById('btn-mode-trend');
+            
+            if(bt && bw && bt2) {
                 bt.className = (mode === 'time') ? "px-3 py-1 text-[10px] font-bold rounded-md bg-white shadow-sm text-usp-600" : "px-3 py-1 text-[10px] font-bold rounded-md text-slate-500 hover:text-slate-700 transition-all";
                 bw.className = (mode === 'wave') ? "px-3 py-1 text-[10px] font-bold rounded-md bg-white shadow-sm text-usp-600" : "px-3 py-1 text-[10px] font-bold rounded-md text-slate-500 hover:text-slate-700 transition-all";
+                bt2.className = (mode === 'trend') ? "px-3 py-1 text-[10px] font-bold rounded-md bg-white shadow-sm text-usp-600" : "px-3 py-1 text-[10px] font-bold rounded-md text-slate-500 hover:text-slate-700 transition-all";
             }
+            
+            const panel = document.getElementById('channel-selector-panel');
+            if (panel) {
+                panel.style.display = (mode === 'trend') ? 'block' : 'none';
+            }
+            
             if(dashboardLoaded) renderSpectralChart();
         }
 
@@ -1092,7 +1411,6 @@
             
             biorreatores[n] = id;
             
-            // Sincronizando DIRETAMENTE na nuvem
             try {
                 const resposta = await fetch(`${URL_BANCO_CENTRAL}?senha=${encodeURIComponent(sessaoSenha)}&action=setSensors`, {
                     method: 'POST',
@@ -1103,7 +1421,7 @@
                 if(!resultadoText.includes("Sucesso")) {
                      console.error("Erro da API:", resultadoText);
                      showModal({ title: 'Erro', message: 'Erro ao gravar biorreator na nuvem.', type: 'alert' });
-                     delete biorreatores[n]; // Reverte
+                     delete biorreatores[n]; 
                 } else {
                     initSensorsDropdown(); renderManageList(); cancelEdit();
                     showModal({ title: 'Sucesso', message: original ? 'Cadastro atualizado com sucesso!' : 'Novo Biorreator cadastrado!', type: 'alert' });
@@ -1128,7 +1446,6 @@
                 type: 'confirm',
                 confirmText: 'Excluir',
                 onConfirm: async () => {
-                    // Armazena backup caso a nuvem falhe
                     const backupBiorreatores = {...biorreatores};
                     delete biorreatores[n]; 
                     
@@ -1143,7 +1460,7 @@
                             renderManageList(); 
                             initSensorsDropdown();
                         } else {
-                            biorreatores = backupBiorreatores; // Reverte erro
+                            biorreatores = backupBiorreatores;
                             showModal({ title: 'Erro', message: 'Erro ao excluir na nuvem.', type: 'alert' });
                         }
                     } catch (e) {
@@ -1181,10 +1498,8 @@
         }
 
         window.onload = async () => { 
-            // O site INICIA sempre mostrando a tela de login como bloqueio TOTAL
             document.getElementById('login-overlay').classList.remove('hidden');
             
-            // Só verifica se tem o token na sessão para poupar o utilizador de redigitar se der um F5.
             if (sessaoSenha) {
                 const btn = document.getElementById('btn-login');
                 const btnOriginalText = btn.innerHTML;
@@ -1197,7 +1512,6 @@
                     loadDashboardData(); 
                     updateFleetStatus();
                 } else {
-                    // Senha da sessão ficou velha, foi revogada, ou ocorreu um erro
                     logout(); 
                 }
                 btn.innerHTML = btnOriginalText;
