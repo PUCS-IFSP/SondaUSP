@@ -42,6 +42,79 @@
             to { opacity: 1; transform: translateY(0); }
         }
         .animate-fade-in { animation: fade-in 0.4s ease-out forwards; }
+
+        /* Estilos para os checkboxes dos canais */
+        .channel-checkbox {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #cbd5e1;
+            border-radius: 4px;
+            outline: none;
+            cursor: pointer;
+            position: relative;
+            flex-shrink: 0;
+        }
+        .channel-checkbox:checked {
+            border-color: transparent;
+        }
+        .channel-checkbox:checked::after {
+            content: '✓';
+            position: absolute;
+            top: -2px;
+            left: 1px;
+            font-size: 14px;
+            font-weight: bold;
+            color: white;
+        }
+        .channel-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            font-size: 12px;
+            font-weight: 500;
+            user-select: none;
+        }
+        .channel-label:hover {
+            background-color: #f1f5f9;
+        }
+        .channel-color-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+        .channel-checkbox-wrapper {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+        .select-all-btn {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: #475569;
+        }
+        .select-all-btn:hover {
+            background: #f1f5f9;
+            border-color: #94a3b8;
+        }
+        .select-all-btn.active {
+            background: #16a34a;
+            color: white;
+            border-color: #16a34a;
+        }
     </style>
 </head>
 <body class="text-slate-800 antialiased min-h-screen flex flex-col relative overflow-x-hidden">
@@ -240,15 +313,29 @@
                         <h2 class="text-lg font-bold text-slate-800 mb-4">Cinética de Crescimento</h2>
                         <div id="grafico-cinetica" class="w-full h-[450px]"></div>
                     </div>
+                    
                     <div class="w-full bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
                         <div class="flex justify-between items-center mb-4">
                             <h2 class="text-lg font-bold text-slate-800">Assinatura Espectral</h2>
                             <div class="flex bg-slate-100 p-1 rounded-lg">
                                 <button onclick="setSpectralMode('time')" id="btn-mode-time" class="px-3 py-1 text-[10px] font-bold rounded-md bg-white shadow-sm text-usp-600 transition-all">HISTÓRICO</button>
                                 <button onclick="setSpectralMode('wave')" id="btn-mode-wave" class="px-3 py-1 text-[10px] font-bold rounded-md text-slate-500 hover:text-slate-700 transition-all">PERFIL (nm)</button>
+                                <button onclick="setSpectralMode('trend')" id="btn-mode-trend" class="px-3 py-1 text-[10px] font-bold rounded-md text-slate-500 hover:text-slate-700 transition-all">TENDÊNCIA</button>
                             </div>
                         </div>
                         <div id="grafico-espectral" class="w-full flex-grow min-h-[400px]"></div>
+                        
+                        <!-- Painel de seleção de canais para o modo TENDÊNCIA -->
+                        <div id="channel-selector-panel" class="mt-4 hidden">
+                            <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
+                                <span class="text-xs font-semibold text-slate-600">Selecione os canais para visualizar:</span>
+                                <div class="flex gap-2">
+                                    <button onclick="selectAllChannels()" class="select-all-btn" id="btn-select-all">Selecionar Todos</button>
+                                    <button onclick="deselectAllChannels()" class="select-all-btn">Desmarcar Todos</button>
+                                </div>
+                            </div>
+                            <div id="channel-checkboxes" class="channel-checkbox-wrapper"></div>
+                        </div>
                     </div>
                 </div>
 
@@ -408,7 +495,7 @@
         // --- LÓGICA DE SESSÃO DA API SEGURA ---
         let sessaoSenha = sessionStorage.getItem('cepema_auth_token') || '';
         
-        // URL do Banco Central (SondaUSP - Banco Central 2)
+        // URL do Banco Central
         const URL_BANCO_CENTRAL = "https://script.google.com/macros/s/AKfycbwRwVx-b26oag5oABmHpcUJx0NGfDPPhROl0LRds9tg8ImfUuqmM65AkooSeH8oWCi_/exec";
 
         // Variáveis de Sistema
@@ -425,23 +512,26 @@
         let dashboardLoaded = false;
         let currentSpectralData = null;
 
+        // Estado dos canais selecionados para o modo TENDÊNCIA
+        let selectedChannels = {};
+
         // =====================================================
         // DADOS_CANAIS ATUALIZADO (curvas realistas, nomes curtos)
         // =====================================================
         const DADOS_CANAIS = {
-            'F1':  { onda: 'F1',  peak: 405, sigma: 17.0, cor: '#1f77b4', dash: 'solid' },
-            'F2':  { onda: 'F2',  peak: 435, sigma: 10.6, cor: '#ff7f0e', dash: 'solid' },
-            'FZ':  { onda: 'FZ',  peak: 450, sigma: 25.5, cor: '#2ca02c', dash: 'solid' },
-            'F3':  { onda: 'F3',  peak: 475, sigma: 14.9, cor: '#d62728', dash: 'solid' },
-            'F4':  { onda: 'F4',  peak: 510, sigma: 14.9, cor: '#9467bd', dash: 'solid' },
-            'FY':  { onda: 'FY',  peak: 550, sigma: 46.7, cor: '#8c564b', dash: 'solid' },
-            'F5':  { onda: 'F5',  peak: 570, sigma: 14.9, cor: '#e377c2', dash: 'solid' },
-            'FXL': { onda: 'FXL', peak: 610, sigma: 36.1, cor: '#7f7f7f', dash: 'solid' },
-            'F6':  { onda: 'F6',  peak: 650, sigma: 14.9, cor: '#bcbd22', dash: 'solid' },
-            'F7':  { onda: 'F7',  peak: 690, sigma: 19.1, cor: '#17becf', dash: 'solid' },
-            'F8':  { onda: 'F8',  peak: 745, sigma: 19.1, cor: '#1a55ff', dash: 'solid' },
-            'FNI': { onda: 'NIR', peak: 855, sigma: 22.9, cor: '#a93226', dash: 'solid' },
-            'CLR': { onda: 'VIS', peak: 550, sigma: 80.0, cor: '#2c3e50', dash: 'dash' }
+            'F1':  { onda: 'F1',  peak: 405, sigma: 17.0, cor: '#1f77b4', dash: 'solid', nome: 'F1 (405 nm)' },
+            'F2':  { onda: 'F2',  peak: 435, sigma: 10.6, cor: '#ff7f0e', dash: 'solid', nome: 'F2 (435 nm)' },
+            'FZ':  { onda: 'FZ',  peak: 450, sigma: 25.5, cor: '#2ca02c', dash: 'solid', nome: 'FZ (450 nm)' },
+            'F3':  { onda: 'F3',  peak: 475, sigma: 14.9, cor: '#d62728', dash: 'solid', nome: 'F3 (475 nm)' },
+            'F4':  { onda: 'F4',  peak: 510, sigma: 14.9, cor: '#9467bd', dash: 'solid', nome: 'F4 (510 nm)' },
+            'FY':  { onda: 'FY',  peak: 550, sigma: 46.7, cor: '#8c564b', dash: 'solid', nome: 'FY (550 nm)' },
+            'F5':  { onda: 'F5',  peak: 570, sigma: 14.9, cor: '#e377c2', dash: 'solid', nome: 'F5 (570 nm)' },
+            'FXL': { onda: 'FXL', peak: 610, sigma: 36.1, cor: '#7f7f7f', dash: 'solid', nome: 'FXL (610 nm)' },
+            'F6':  { onda: 'F6',  peak: 650, sigma: 14.9, cor: '#bcbd22', dash: 'solid', nome: 'F6 (650 nm)' },
+            'F7':  { onda: 'F7',  peak: 690, sigma: 19.1, cor: '#17becf', dash: 'solid', nome: 'F7 (690 nm)' },
+            'F8':  { onda: 'F8',  peak: 745, sigma: 19.1, cor: '#1a55ff', dash: 'solid', nome: 'F8 (745 nm)' },
+            'FNI': { onda: 'NIR', peak: 855, sigma: 22.9, cor: '#a93226', dash: 'solid', nome: 'FNI (855 nm)' },
+            'CLR': { onda: 'VIS', peak: 550, sigma: 80.0, cor: '#2c3e50', dash: 'dash', nome: 'CLR (VIS)' }
         };
 
         const CORES_FASES = {
@@ -452,6 +542,174 @@
             'N/A': { bg: '#ffffff', border: '#e2e8f0', text: '#94a3b8' }
         };
 
+        // =====================================================
+        // FUNÇÕES DO MODO TENDÊNCIA
+        // =====================================================
+        function initChannelSelector() {
+            const container = document.getElementById('channel-checkboxes');
+            if (!container) return;
+            
+            container.innerHTML = '';
+            const channelKeys = Object.keys(DADOS_CANAIS);
+            
+            // Inicializa o estado dos canais (todos selecionados por padrão)
+            channelKeys.forEach(key => {
+                if (selectedChannels[key] === undefined) {
+                    selectedChannels[key] = true;
+                }
+            });
+
+            channelKeys.forEach(key => {
+                const info = DADOS_CANAIS[key];
+                const wrapper = document.createElement('div');
+                wrapper.className = 'channel-label';
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.className = 'channel-checkbox';
+                checkbox.id = 'chk-' + key;
+                checkbox.checked = selectedChannels[key] !== false;
+                checkbox.style.borderColor = info.cor;
+                checkbox.style.backgroundColor = selectedChannels[key] !== false ? info.cor : 'white';
+                checkbox.style.setProperty('accent-color', info.cor);
+                
+                // Estilização do checkbox quando marcado
+                checkbox.addEventListener('change', function() {
+                    if (this.checked) {
+                        this.style.backgroundColor = info.cor;
+                        this.style.borderColor = info.cor;
+                    } else {
+                        this.style.backgroundColor = 'white';
+                        this.style.borderColor = '#cbd5e1';
+                    }
+                    selectedChannels[key] = this.checked;
+                    updateTrendChart();
+                });
+                
+                const dot = document.createElement('span');
+                dot.className = 'channel-color-dot';
+                dot.style.backgroundColor = info.cor;
+                if (info.dash === 'dash') {
+                    dot.style.border = '2px dashed ' + info.cor;
+                    dot.style.backgroundColor = 'transparent';
+                }
+                
+                const label = document.createElement('span');
+                label.textContent = info.nome;
+                label.style.color = info.cor;
+                
+                wrapper.appendChild(checkbox);
+                wrapper.appendChild(dot);
+                wrapper.appendChild(label);
+                container.appendChild(wrapper);
+            });
+            
+            updateSelectAllButton();
+        }
+
+        function updateSelectAllButton() {
+            const btn = document.getElementById('btn-select-all');
+            if (!btn) return;
+            
+            const allChecked = Object.keys(DADOS_CANAIS).every(key => selectedChannels[key] !== false);
+            if (allChecked) {
+                btn.textContent = 'Selecionar Todos ✓';
+                btn.classList.add('active');
+            } else {
+                btn.textContent = 'Selecionar Todos';
+                btn.classList.remove('active');
+            }
+        }
+
+        function selectAllChannels() {
+            const channelKeys = Object.keys(DADOS_CANAIS);
+            channelKeys.forEach(key => {
+                selectedChannels[key] = true;
+                const checkbox = document.getElementById('chk-' + key);
+                if (checkbox) {
+                    checkbox.checked = true;
+                    checkbox.style.backgroundColor = DADOS_CANAIS[key].cor;
+                    checkbox.style.borderColor = DADOS_CANAIS[key].cor;
+                }
+            });
+            updateSelectAllButton();
+            updateTrendChart();
+        }
+
+        function deselectAllChannels() {
+            const channelKeys = Object.keys(DADOS_CANAIS);
+            channelKeys.forEach(key => {
+                selectedChannels[key] = false;
+                const checkbox = document.getElementById('chk-' + key);
+                if (checkbox) {
+                    checkbox.checked = false;
+                    checkbox.style.backgroundColor = 'white';
+                    checkbox.style.borderColor = '#cbd5e1';
+                }
+            });
+            updateSelectAllButton();
+            updateTrendChart();
+        }
+
+        function updateTrendChart() {
+            if (!currentSpectralData || spectralMode !== 'trend') return;
+            
+            const data = currentSpectralData;
+            const traces = [];
+            
+            Object.keys(DADOS_CANAIS).forEach(key => {
+                if (selectedChannels[key] !== false) {
+                    const info = DADOS_CANAIS[key];
+                    traces.push({
+                        x: data.dates,
+                        y: data.spectral[key] || [],
+                        name: info.nome,
+                        type: 'scatter',
+                        mode: 'lines',
+                        line: {
+                            color: info.cor,
+                            width: 2.5,
+                            dash: info.dash || 'solid'
+                        },
+                        hovertemplate: '%{x}<br>%{y:.2f} U.A.<extra></extra>'
+                    });
+                }
+            });
+
+            const layout = {
+                font: { family: 'Inter' },
+                margin: { l: 50, r: 30, t: 20, b: 50 },
+                xaxis: {
+                    title: 'Data/Hora',
+                    gridcolor: '#f1f5f9',
+                    tickangle: -45,
+                    ticks: 'outside'
+                },
+                yaxis: {
+                    title: 'Intensidade (U.A.)',
+                    gridcolor: '#f1f5f9',
+                    rangemode: 'tozero'
+                },
+                hovermode: 'x unified',
+                showlegend: true,
+                legend: {
+                    orientation: 'h',
+                    y: -0.2,
+                    x: 0.5,
+                    xanchor: 'center',
+                    font: { size: 11 }
+                }
+            };
+
+            Plotly.newPlot('grafico-espectral', traces, layout, {
+                responsive: true,
+                displayModeBar: false
+            });
+        }
+
+        // =====================================================
+        // FUNÇÕES EXISTENTES (mantidas)
+        // =====================================================
         async function syncDaNuvem() {
             if (!sessaoSenha || !URL_BANCO_CENTRAL) return false;
             
@@ -963,6 +1221,12 @@
                 xaxis: { showticklabels: false, showgrid: false }, xaxis2: { anchor: 'y2', gridcolor: '#f1f5f9' }
             }, {responsive: true, displayModeBar: false});
 
+            // Inicializa o seletor de canais se ainda não foi inicializado
+            if (!document.getElementById('channel-checkboxes').children.length) {
+                initChannelSelector();
+            }
+
+            // Renderiza o gráfico espectral de acordo com o modo atual
             renderSpectralChart();
 
             document.getElementById('grid-canais').innerHTML = Object.keys(DADOS_CANAIS).map(ch => {
@@ -990,9 +1254,20 @@
             if(!currentSpectralData) return;
             const data = currentSpectralData;
 
+            if (spectralMode === 'trend') {
+                // Mostra o painel de seleção de canais
+                document.getElementById('channel-selector-panel').classList.remove('hidden');
+                // Atualiza o gráfico de tendência
+                updateTrendChart();
+                return;
+            } else {
+                // Esconde o painel de seleção de canais
+                document.getElementById('channel-selector-panel').classList.add('hidden');
+            }
+
             if(spectralMode === 'time') {
                 let traces = Object.keys(DADOS_CANAIS).map(ch => ({
-                    x: data.dates, y: data.spectral[ch], name: DADOS_CANAIS[ch].onda,
+                    x: data.dates, y: data.spectral[ch], name: DADOS_CANAIS[ch].nome,
                     type: 'scatter', mode: 'lines', line: { color: DADOS_CANAIS[ch].cor, width: 2, dash: DADOS_CANAIS[ch].dash }
                 }));
                 Plotly.newPlot('grafico-espectral', traces, {
@@ -1000,7 +1275,7 @@
                     xaxis: { gridcolor: "#f1f5f9" }, yaxis: { gridcolor: "#f1f5f9", rangemode: 'tozero' },
                     hovermode: 'x unified', showlegend: false
                 }, {responsive: true, displayModeBar: false});
-            } else {
+            } else if (spectralMode === 'wave') {
                 const wavelengths = []; for(let w = 350; w <= 1050; w += 5) wavelengths.push(w);
                 const latest = {}; Object.keys(DADOS_CANAIS).forEach(ch => {
                     const arr = data.spectral[ch];
@@ -1012,7 +1287,7 @@
                     const amplitude = latest[ch] || 0.1;
                     const intensities = wavelengths.map(w => amplitude * Math.exp(-Math.pow(w - info.peak, 2) / (2 * Math.pow(info.sigma, 2))));
                     return {
-                        x: wavelengths, y: intensities, name: info.onda, type: 'scatter', mode: 'lines',
+                        x: wavelengths, y: intensities, name: info.nome, type: 'scatter', mode: 'lines',
                         line: { color: info.cor, width: (ch === 'CLR') ? 2 : 2.5, dash: info.dash, shape: 'spline' },
                         fill: (ch === 'CLR') ? 'none' : 'tozeroy',
                         fillcolor: info.cor + '25'
@@ -1036,10 +1311,28 @@
             spectralMode = mode;
             const bt = document.getElementById('btn-mode-time');
             const bw = document.getElementById('btn-mode-wave');
-            if(bt && bw) {
+            const bt2 = document.getElementById('btn-mode-trend');
+            
+            if(bt && bw && bt2) {
                 bt.className = (mode === 'time') ? "px-3 py-1 text-[10px] font-bold rounded-md bg-white shadow-sm text-usp-600" : "px-3 py-1 text-[10px] font-bold rounded-md text-slate-500 hover:text-slate-700 transition-all";
                 bw.className = (mode === 'wave') ? "px-3 py-1 text-[10px] font-bold rounded-md bg-white shadow-sm text-usp-600" : "px-3 py-1 text-[10px] font-bold rounded-md text-slate-500 hover:text-slate-700 transition-all";
+                bt2.className = (mode === 'trend') ? "px-3 py-1 text-[10px] font-bold rounded-md bg-white shadow-sm text-usp-600" : "px-3 py-1 text-[10px] font-bold rounded-md text-slate-500 hover:text-slate-700 transition-all";
             }
+            
+            // Mostra/esconde o painel de seleção de canais
+            const panel = document.getElementById('channel-selector-panel');
+            if (panel) {
+                if (mode === 'trend') {
+                    panel.classList.remove('hidden');
+                    // Inicializa o seletor se necessário
+                    if (!document.getElementById('channel-checkboxes').children.length) {
+                        initChannelSelector();
+                    }
+                } else {
+                    panel.classList.add('hidden');
+                }
+            }
+            
             if(dashboardLoaded) renderSpectralChart();
         }
 
